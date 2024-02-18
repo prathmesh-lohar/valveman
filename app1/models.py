@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.auth.models import User
 # Create your models here.
 
 class tanks(models.Model):
@@ -21,17 +21,24 @@ class tanks(models.Model):
     
     
 class marker(models.Model):
-    # user = 
-     id = models.AutoField(primary_key=True)  # a unique integer identifier for each entry
+     
+     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+     
+     # a unique integer identifier for each entry
+     path_id = models.IntegerField(null=True, blank=True)
+     point_id = models.IntegerField(null=True, blank=True)
+     
      purpose = models.CharField(max_length=255,null=True,blank=True)
      detail = models.CharField(max_length=255,null=True,blank=True)
      type = models.CharField(max_length=255,null=True,blank=True)
      
-     seq = models.IntegerField();   # sequence number of this marker with respect to other markers at the same location
-     
+  
      
      latitude = models.FloatField(null=True,blank=True)
      longitude = models.FloatField(null=True,blank=True)
+     
+     # Dictionary to store markers by sequence number
+
      
      
      
