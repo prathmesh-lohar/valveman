@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'valveman.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'data1',
+        'NAME': 'vavleman',
         'USER': 'root',
         'PASSWORD': 'root',
         'HOST':'localhost',

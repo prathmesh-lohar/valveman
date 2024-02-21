@@ -1,95 +1,104 @@
-    <!DOCTYPE html>
-    <html>
+<!DOCTYPE html>
+<html>
 
-    <head>
-        <title>Google Maps Location Selection Example</title>
-        {% load static %}
-        <style>
-            #map {
-                height: 450px;
-                width: 100%;
-            }
+<head>
+    <title>Google Maps Location Selection Example</title>
+    {% load static %}
+    <style>
+        #map {
+            height: 450px;
+            width: 100%;
+        }
 
-            #controls {
-                margin-top: 10px;
-            }
-        </style>
+        #controls {
+            margin-top: 10px;
+        }
+    </style>
 
-        <script src="{% static 'js/drawline.js' %}"></script>
+    <script src="{% static 'js/drawline.js' %}"></script>
 
-        <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAdGAjzYAR434EVUQDnB-L0N2nZ47Itq2c&callback=initMap"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAdGAjzYAR434EVUQDnB-L0N2nZ47Itq2c&callback=initMap"></script>
 
 
-    </head>
+</head>
 
-    <body>
-        <div id="map"></div>
-        <div id="controls">
-            <label>Select location type:</label>
-            <select id="locationType">
-                <option value="valve">Valve</option>
-                <option value="branch">Branch</option>
-                <option value="pipe">Pipe</option>
-            </select>
-        </div>
-        <button onclick="undo()">Undo</button>
-        <button onclick="redo()">Redo</button>
-        <button onclick="clearMarkers()">Clear All</button>
-        <button onclick="displayResults()">Display Results</button>
+<body>
+    <div id="map"></div>
+    <div id="controls">
+        <label>Select location type:</label>
+        <select id="locationType">
+            <option value="valve">Valve</option>
+            <option value="branch">Branch</option>
+            <option value="pipe">Pipe</option>
+        </select>
+    </div>
+    <button onclick="undo()">Undo</button>
+    <button onclick="redo()">Redo</button>
+    <button onclick="clearMarkers()">Clear All</button>
+    <button onclick="displayResults()">Display Results</button>
 
-    
 
-        <script>
-            var map;
-            var markers = [];
-            var lines = [];
-            var undoStack = [];
-            var redoStack = [];
-            var latitudeList = [];
-            var longitudeList = [];
-            var type = [];
 
-            
+    <script>
+        var map;
+        var markers = [];
+        var lines = [];
+        var undoStack = [];
+        var redoStack = [];
+        var latitudeList = [];
+        var longitudeList = [];
+        var type = [];
 
-            function initMap() {
-                map = new google.maps.Map(document.getElementById('map'), {
-                    center: {
-                        lat: 20.9025, // Latitude of Dhule, Maharashtra
-                        lng: 74.7774 // Longitude of Dhule, Maharashtra
-                    },
-                    zoom: 12,
-                    mapTypeControl: true,
-                    mapTypeId: google.maps.MapTypeId.HYBRID
-                });
+        var positions = [];
 
-                fetchStoredMarkers();
+   
 
-                google.maps.event.addListener(map, 'click', function (event) {
-                    var locationType = document.getElementById('locationType').value;
-                    if (locationType === 'cancel') {
-                        return;
-                    }
-                    addMarker(event.latLng, locationType);
-                    
 
-                });
-            }
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: {
+                    lat: 20.9025, // Latitude of Dhule, Maharashtra
+                    lng: 74.7774 // Longitude of Dhule, Maharashtra
+                },
+                zoom: 12,
+                mapTypeControl: true,
+                mapTypeId: google.maps.MapTypeId.HYBRID
+            });
 
-            
-            //show stored markers
+            fetchStoredMarkers();
 
-            function fetchStoredMarkers() {
-                fetch('/get_markers')
+
+
+            google.maps.event.addListener(map, 'click', function (event) {
+                var locationType = document.getElementById('locationType').value;
+                if (locationType === 'cancel') {
+                    return;
+                }
+                addMarker(event.latLng, locationType);
+
+
+            });
+
+
+
+        }
+
+
+        //show stored markers
+
+        function fetchStoredMarkers() {
+            fetch('/get_markers')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         data.markers.forEach(marker => {
-                            addStoredMarker(marker.latitude, marker.longitude, marker.type);
+                            addStoredMarker(marker.latitude, marker.longitude, marker.type, marker.path_id, marker.point_id);
+                            drawLinesBetweenMarkers(data.markers_by_path);
+
                         });
-            
+
                         // Draw lines between markers
-                        drawLinesBetweenMarkers(data.markers_by_path);
-            
+
                     } else {
                         console.error('Error fetching stored markers:', data.error);
                     }
@@ -97,72 +106,88 @@
                 .catch(error => {
                     console.error('Error fetching stored markers:', error);
                 });
-            }
+        }
 
-            function drawLinesBetweenMarkers(markersByPath) {
-                for (var pathId in markersByPath) {
-                    var pathPoints = markersByPath[pathId];
-                    var path = [];
-                    pathPoints.forEach(point => {
-                        path.push({ lat: point[0], lng: point[1] });
-                    });
-            
-                    var line = new google.maps.Polyline({
-                        path: path,
-                        geodesic: true,
-                        strokeColor: '#FF0000', // Change the stroke color if needed
-                        strokeOpacity: 1.0,
-                        strokeWeight: 2,
-                        map: map
-                    });
-                    lines.push(line);
-                }
-            }
+        function drawLinesBetweenMarkers(markersByPath) {
 
-            // draw line between saved marker
+            for (var pathId in markersByPath) {
+                var pathPoints = markersByPath[pathId];
+                var path = [];
+                pathPoints.forEach(point => {
+                    path.push({ lat: point[0], lng: point[1] });
+                });
 
-       /* function drawLinesBetweenMarkers() {
-                for (var i = 0; i < markers.length - 1; i++) {
-                    var line = new google.maps.Polyline({
-                        path: [markers[i].getPosition(), markers[i+1].getPosition()],
-                        geodesic: true,
-                        strokeColor: '#0000FF',
-                        strokeOpacity: 1.0,
-                        strokeWeight: 2,
-                        map: map
-                    });
-                    lines.push(line);
-                }
-            } 
-            */
-
-            /*function drawLinesBetweenMarkers() {
-                var currentPathId = null;
-                var pathPoints = [];
-            
-                for (var i = 0; i < markers.length; i++) {
-                    var markerPathId = markers[i].path_id; // Assuming path_id is a property of markers
-                    var markerPointId = markers[i].point_id; // Assuming point_id is a property of markers
-            
-                    if (currentPathId !== markerPathId) {
-                        if (pathPoints.length > 1) {
-                            drawLineForPath(pathPoints);
-                        }
-                        pathPoints = [];
-                        currentPathId = markerPathId;
-                    }
-            
-                    pathPoints.push(markers[i].getPosition());
-                }
-            
-                if (pathPoints.length > 1) {
-                    drawLineForPath(pathPoints);
-                }
-            }
-            
-            function drawLineForPath(pathPoints) {
                 var line = new google.maps.Polyline({
-                    path: pathPoints,
+                    path: path,
+                    geodesic: true,
+                    strokeColor: '#FF0000', // Change the stroke color if needed
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                    map: map
+                });
+                lines.push(line);
+            }
+        }
+
+        // draw line between saved marker
+
+
+        function addStoredMarker(latitude, longitude, type, path_id, point_id) {
+            var iconUrl = getIconForType(type);
+            var marker = new google.maps.Marker({
+                position: { lat: latitude, lng: longitude },
+                map: map,
+                draggable: false, // Assuming stored markers are not draggable
+                icon: iconUrl,
+                pathId: path_id, // Set the path ID here
+                pointId: point_id // Set the point ID here
+            });
+        
+            markers.push(marker);
+        
+            marker.addListener('click', function () {
+                handleMarkerClick(marker);
+            });
+        }
+        
+
+
+        //
+
+        var selectedMarkers = []; // Array to store selected markers
+
+
+
+        function addMarker(location, type) {
+            var info = { type: type };
+            if (type === 'valve') {
+                info.name = "v1";
+                info.keySize = "def";
+                //info.name = prompt('Enter valve name:');
+                //info.keySize = prompt('Enter valve key size:');
+            } else if (type === 'pipe') {
+                info.pipeType = "p1";
+                info.pipeSize = "def";
+                //info.pipeType = prompt('Enter pipe type:');
+                //info.pipeSize = prompt('Enter pipe size:');
+            }
+
+            var marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                draggable: true,
+                animation: google.maps.Animation.DROP,
+                icon: getIconForType(type),
+                info: info
+            });
+
+            selectedMarkers.push(marker);
+
+            if (selectedMarkers.length > 1) {
+                // Draw line between the newly added marker and the previous marker
+                var previousMarker = selectedMarkers[selectedMarkers.length - 2];
+                var line = new google.maps.Polyline({
+                    path: [previousMarker.getPosition(), location],
                     geodesic: true,
                     strokeColor: '#0000FF',
                     strokeOpacity: 1.0,
@@ -170,186 +195,260 @@
                     map: map
                 });
                 lines.push(line);
-            }*/
-
-            
-            
-            
-            
-            
-            
-            function addStoredMarker(latitude, longitude, type) {
-                var iconUrl = getIconForType(type); 
-                var marker = new google.maps.Marker({
-                    position: { lat: latitude, lng: longitude },
-                    map: map,
-                    draggable: false, // Assuming stored markers are not draggable
-                    
-                    icon: iconUrl,
-                });
-
-                markers.push(marker);
-
-            }
-            
-
-            //
-
-            function addMarker(location, type) {
-                var info = {};
-                if (type === 'valve') {
-                    info.name = prompt('Enter valve name:');
-                    info.keySize = prompt('Enter valve key size:');
-                } else if (type === 'pipe') {
-                    info.pipeType = prompt('Enter pipe type:');
-                    info.pipeSize = prompt('Enter pipe size:');
-                }
-                var marker = new google.maps.Marker({
-                    position: location,
-                    map: map,
-                    draggable: true,
-                    animation: google.maps.Animation.DROP,
-                    icon: getIconForType(type),
-                    info: info
-                });
-                markers.push(marker);
-                latitudeList.push(location.lat());
-                longitudeList.push(location.lng());
-                if (markers.length > 1) {
-                    var line = new google.maps.Polyline({
-                        path: [markers[markers.length - 2].getPosition(), markers[markers.length - 1].getPosition()],
-                        geodesic: true,
-                        strokeColor: '#0000FF',
-                        strokeOpacity: 1.0,
-                        strokeWeight: 2,
-                        map: map
-                    });
-                    lines.push(line);
-                }
-                addToUndoStack({ action: 'add', marker: marker, line: line });
-                clearRedoStack();
             }
 
-            function clearMarkers() {
-                for (var i = 0; i < markers.length; i++) {
-                    markers[i].setMap(null);
-                }
-                markers = [];
-                for (var j = 0; j < lines.length; j++) {
-                    lines[j].setMap(null);
-                }
-                lines = [];
-                undoStack = [];
-                redoStack = [];
-                latitudeList = [];
-                longitudeList = [];
+            addToUndoStack({ action: 'add', marker: marker });
+
+            clearRedoStack();
+        }
+
+
+
+
+
+        function clearMarkers() {
+            for (var i = 0; i < markers.length; i++) {
+                markers[i].setMap(null);
             }
+            markers = [];
+            for (var j = 0; j < lines.length; j++) {
+                lines[j].setMap(null);
+            }
+            lines = [];
+            undoStack = [];
+            redoStack = [];
+            latitudeList = [];
+            longitudeList = [];
+        }
 
-            function undo() {
-                if (undoStack.length === 0) {
-                    return;
+        function undo() {
+            if (undoStack.length === 0) {
+                return;
+            }
+            var action = undoStack.pop();
+            if (action.action === 'add') {
+                action.marker.setMap(null);
+                markers.pop();
+                latitudeList.pop();
+                longitudeList.pop();
+                if (action.line) {
+                    action.line.setMap(null);
+                    lines.pop();
                 }
-                var action = undoStack.pop();
-                if (action.action === 'add') {
-                    action.marker.setMap(null);
-                    markers.pop();
-                    latitudeList.pop();
-                    longitudeList.pop();
-                    if (action.line) {
-                        action.line.setMap(null);
-                        lines.pop();
-                    }
-                    addToRedoStack(action);
+                addToRedoStack(action);
+            }
+        }
+
+        function redo() {
+            if (redoStack.length === 0) {
+                return;
+            }
+            var action = redoStack.pop();
+            if (action.action === 'add') {
+                action.marker.setMap(map);
+                markers.push(action.marker);
+                latitudeList.push(action.marker.getPosition().lat());
+                longitudeList.push(action.marker.getPosition().lng());
+                if (action.line) {
+                    action.line.setMap(map);
+                    lines.push(action.line);
                 }
+                addToUndoStack(action);
             }
+        }
 
-            function redo() {
-                if (redoStack.length === 0) {
-                    return;
-                }
-                var action = redoStack.pop();
-                if (action.action === 'add') {
-                    action.marker.setMap(map);
-                    markers.push(action.marker);
-                    latitudeList.push(action.marker.getPosition().lat());
-                    longitudeList.push(action.marker.getPosition().lng());
-                    if (action.line) {
-                        action.line.setMap(map);
-                        lines.push(action.line);
-                    }
-                    addToUndoStack(action);
-                }
+        function addToUndoStack(action) {
+            undoStack.push(action);
+        }
+
+        function addToRedoStack(action) {
+            redoStack.push(action);
+        }
+
+        function clearRedoStack() {
+            redoStack = [];
+        }
+
+        function getIconForType(type) {
+            switch (type) {
+                case 'valve':
+                    return '{% static 'valve.png' %}'; // Valve icon
+                case 'branch':
+                    return '{% static 'branch.png' %}'; // Branch icon
+                case 'pipe':
+                    return 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'; // Pipe icon
+                default:
+                    return null;
             }
+        }
 
-            function addToUndoStack(action) {
-                undoStack.push(action);
-            }
+        function displayResults() {
+            console.log("Selected Markers: ", selectedMarkers);
+           
 
-            function addToRedoStack(action) {
-                redoStack.push(action);
-            }
 
-            function clearRedoStack() {
-                redoStack = [];
-            }
+            // Extract latitude, longitude, and type from selected markers
+            var selectedMarkersData = selectedMarkers.map(function (marker) {
+                return {
+                    latitude: marker.getPosition().lat(),
+                    longitude: marker.getPosition().lng(),
+                    type: marker.info.type // Assuming type is stored in the marker's info property
+                };
+            });
 
-            function getIconForType(type) {
-                switch (type) {
-                    case 'valve':
-                        return '{% static 'valve.png' %}'; // Valve icon
-                    case 'branch':
-                        return '{% static 'branch.png' %}'; // Branch icon
-                    case 'pipe':
-                        return 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'; // Pipe icon
-                    default:
-                        return null;
-                }
-            }
+            // Save selected markers
+            fetch('/save_markers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
+                },
+                body: JSON.stringify({
+                    markers: selectedMarkersData,
 
-            function displayResults() {
-                console.log("Latitude List: ", latitudeList);
-                console.log("Longitude List: ", longitudeList);
-
-                var locationType = document.getElementById('locationType').value;
-
-                //save cordinates
-                fetch('/save_markers', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
-                    },
-                    body: JSON.stringify({
-                        latitudeList: latitudeList,
-                        longitudeList: longitudeList,
-                        type:locationType,
-                    }),
-                })
+                }),
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log('Latitude and longitude lists saved successfully!');
-                        console.log(latitudeList);
-                        console.log(longitudeList);
-
-
+                        console.log('Selected markers saved successfully!');
+                        console.log(selectedMarkersData);
                     } else {
-                        console.error('Error saving latitude and longitude lists:', data.error);
+                        console.error('Error saving selected markers:', data.error);
                     }
                 })
                 .catch(error => {
                     console.error('Error sending AJAX request:', error);
                 });
+        }
+
+        // Function to handle marker clicks
+
+        function handleMarkerClick(marker) {
+            // Get marker path ID and point ID
+            var pathId = marker.pathId;
+            var pointId = marker.pointId;
+            console.log('Marker clicked! Path ID:', pathId, 'Point ID:', pointId);
+
+            selectedMarker = marker; 
+
+            google.maps.event.addListenerOnce(map, 'click', function (event) {
+                drawLineFromSelectedMarker(event.latLng);
+            });
+        
+            // Increment pointId
+            var newPointId = pointId + 1; // Assuming pointId is a numeric value
+        
+            // Call a function to extend the marker or line with the new pointId
+            extendMarkerOrLine(marker, newPointId);
+        }
+
+
+        function drawLineFromSelectedMarker(position) {
+            if (selectedMarker) {
+                var line = new google.maps.Polyline({
+                    path: [selectedMarker.getPosition(), position],
+                    geodesic: true,
+                    strokeColor: '#0000FF',
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                    map: map
+                });
+                lines.push(line);
+
+                addToUndoStack({ action: 'add', line: line });
+
+                clearRedoStack();
+            }
+        }
+        
+        // Function to extend the marker or line with a new pointId
+        // Function to extend the marker or line with a new pointId
+        function extendMarkerOrLine(marker, newPointId) {
+            // Here you can implement the logic to extend the marker or line with the new pointId
+            // For example, if you want to extend the line:
+            // Find the line associated with the marker
+            var associatedLine = findLineByMarker(marker);
+            if (associatedLine) {
+                // Extend the line by adding a new point with the newPointId
+                var newPath = associatedLine.getPath();
+                newPath.push(marker.getPosition());
+
+                // Update the marker's pointId
+                marker.pointId = newPointId;
+
+                // Send an AJAX request to save the updated marker's pointId
+                saveMarkerPointId(marker, newPointId);
             }
 
-            
+            // You can add similar logic for extending the marker itself
+        }
 
-        </script>
+        // Function to send an AJAX request to save the updated marker's pointId
+        /* function saveMarkerPointId(marker, newPointId) {
+            fetch('/update_marker_point', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
+                },
+                body: JSON.stringify({
+                    marker_id: marker.id,  // Assuming you have an id field in your marker model
+                    new_point_id: newPointId,
+                    path_id: marker.pathId,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Marker pointId updated successfully:', marker.id);
+                } else {
+                    console.error('Error updating marker pointId:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating marker pointId:', error);
+            });
+        } */
 
+        function saveMarkerPointId(marker, newPointId) {
+            fetch('/update_marker_point', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
+                },
+                body: JSON.stringify({
+                    marker_id: marker.id,
+                    new_point_id: newPointId,
+                    path_id: marker.pathId,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Marker pointId updated successfully:', marker.id);
+                    // Update the marker's pointId
+                    marker.pointId = newPointId;
+                } else {
+                    console.error('Error updating marker pointId:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating marker pointId:', error);
+            });
+        }
         
+
+
+        function findLineByMarker(marker) {
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                if (line.getPath().getArray().includes(marker.getPosition())) {
+                    return line;
+                }
+            }
+            return null;
+        }
         
-
-        <!-- Load the Maps JavaScript API -->
-    </body>
-
-    </html>
+    </script>

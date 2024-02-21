@@ -57,63 +57,88 @@ def draw_line(request):
 
 
 
+from django.db.models import Max, Q
 
-# def save_markers(request):
-#     if request.method == 'POST':
-#         data = json.loads(request.body)
-#         latitude_list = data.get('latitudeList', [])
-#         longitude_list = data.get('longitudeList', [])
-#         marker_type = data.get('type', None)  
+from django.views.decorators.csrf import csrf_exempt
 
-#         # Print to check if lists are received
-#         print("Latitude List:", latitude_list)
-#         print("Longitude List:", longitude_list)
-        
-#         print("Type:", marker_type)
-
-        
-#         # Save latitude and longitude pairs to database
-#         for  lat, lon in zip(latitude_list, longitude_list):
-#             new_marker = marker.objects.create(latitude=lat, longitude=lon)
-#             new_marker.save()
-                   
-
-#         return JsonResponse({'success': True})
-#     else:
-#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-
-from django.db.models import Max
+@csrf_exempt
 
 def save_markers(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        latitude_list = data.get('latitudeList', [])
-        longitude_list = data.get('longitudeList', [])
-        marker_type = data.get('type', None)  
+        markers_data = data.get('markers', [])  # Retrieve the markers array from the data
 
         # Fetch the latest path_id from the database
         latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
         new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
 
-        # Save latitude and longitude pairs to database with incremented path_id and sequential point_id
-        for index, (lat, lon) in enumerate(zip(latitude_list, longitude_list), start=1):
+        # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+        for index, marker_info in enumerate(markers_data, start=1):
+            lat = marker_info.get('latitude')
+            lon = marker_info.get('longitude')
+            marker_type = marker_info.get('type')
+
+            # Check if a marker with the same latitude, longitude, and type already exists
+            existing_marker = marker.objects.filter(
+                latitude=lat,
+                longitude=lon,
+                type=marker_type
+            ).first()
+
+            if existing_marker:
+                # Skip saving duplicate data
+                continue
+
             new_marker = marker.objects.create(
-                path_id=new_path_id, 
-                point_id=index,
-                latitude=lat, 
+                path_id=new_path_id,
+                point_id=index,  # Use the index variable for sequential point_id
+                latitude=lat,
                 longitude=lon,
                 type=marker_type
             )
             new_marker.save()
-                   
+
         return JsonResponse({'success': True})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
+def get_existing_marker(request):
+    from app1.models import marker
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        path_id = data.get('path_id')
+        point_id = data.get('point_id')
+
+        last_point = marker.objects.filter(path_id=path_id).last()
+        all_markers = marker.objects.filter(path_id=path_id)
+
+        serialized_markers = []
+        
+        
+        
+        if last_point==point_id:
+            
+            for marker in all_markers:
+                serialized_markers.append({
+                    'latitude': marker.latitude,
+                    'longitude': marker.longitude,
+                    'type':marker.type ,
+                    'path_id': marker.path_id,
+                    'point_id': marker.point_id
+                    # Add other fields if needed
+                
+                })
+      
+
+     
+        return JsonResponse({'success': True, 'markers': serialized_markers})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
+
+    
 def get_markers(request):
     
     from app1.models import  marker
@@ -127,7 +152,9 @@ def get_markers(request):
         serialized_markers.append({
             'latitude': marker.latitude,
             'longitude': marker.longitude,
-            'type':marker.type  
+            'type':marker.type ,
+            'path_id': marker.path_id,
+            'point_id': marker.point_id
             # Add other fields if needed
            
         })
@@ -165,3 +192,28 @@ def get_markers_by_path_id():
 
     return markers_by_path
 
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def update_marker_point(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        marker_id = data.get('marker_id')
+        path_id = data.get('path_id')
+        
+        try:
+            # Fetch the latest point_id for the given path_id
+            latest_point_id = marker.objects.filter(path_id=path_id).latest('point_id').point_id
+            # Update the marker's point_id
+            marker_obj = marker.objects.get(point_id=marker_id)
+            marker_obj.point_id = latest_point_id + 1  # Increment the point_id
+            marker_obj.save()
+            return JsonResponse({'success': True})
+        except marker.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Marker not found'})
+        except marker.MultipleObjectsReturned:
+            return JsonResponse({'success': False, 'error': 'Multiple markers found for the same path'})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})

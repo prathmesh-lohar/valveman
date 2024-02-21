@@ -250,10 +250,20 @@
         function displayResults() {
             console.log("Latitude List: ", latitudeList);
             console.log("Longitude List: ", longitudeList);
-
+        
             var locationType = document.getElementById('locationType').value;
-
-            //save cordinates
+        
+            // Create an array to hold marker data, each including latitude, longitude, and type
+            var markersData = [];
+            for (var i = 0; i < latitudeList.length; i++) {
+                markersData.push({
+                    latitude: latitudeList[i],
+                    longitude: longitudeList[i],
+                    type: locationType
+                });
+            }
+        
+            // Save coordinates
             fetch('/save_markers', {
                 method: 'POST',
                 headers: {
@@ -261,9 +271,7 @@
                     'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
                 },
                 body: JSON.stringify({
-                    latitudeList: latitudeList,
-                    longitudeList: longitudeList,
-                    type:locationType
+                    markers: markersData
                 }),
             })
             .then(response => response.json())
@@ -272,8 +280,6 @@
                     console.log('Latitude and longitude lists saved successfully!');
                     console.log(latitudeList);
                     console.log(longitudeList);
-
-
                 } else {
                     console.error('Error saving latitude and longitude lists:', data.error);
                 }
@@ -282,6 +288,7 @@
                 console.error('Error sending AJAX request:', error);
             });
         }
+        
 
     </script>
 
