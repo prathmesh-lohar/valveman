@@ -9,8 +9,18 @@ from django.http import JsonResponse
 
 from django.db.models import Max
 from django.db.models import F
+from django.views.decorators.csrf import csrf_exempt
+
+from django.contrib.auth.models import User,auth
+
+from django.shortcuts import render,HttpResponse,redirect
+
+from django.contrib.auth.decorators import login_required
+
 
 # Create your views here.
+@login_required(login_url='/login')
+
 def index(request):
     tank = tanks.objects.all()
     # print(tank)
@@ -22,6 +32,34 @@ def index(request):
     
     return render(request, "index.html",data)
 
+
+def logout(request):
+    auth.logout(request)
+
+    return redirect('/')
+
+
+
+def login (request):
+    
+    if request.method == 'POST':
+        uname = request.POST.get('username')
+        pwd = request.POST.get('pwd')
+
+        
+        user = auth.authenticate(username=uname, password=pwd)
+            
+        if user is not None:
+            auth.login(request, user)
+            return redirect('/')
+        else:
+            return HttpResponse("uname , password invalid ")
+    
+    return render(request, "login.html")
+
+
+@login_required(login_url='/login')
+
 def all_tanks(request):
     tank = tanks.objects.all()
     # print(tank)
@@ -31,6 +69,9 @@ def all_tanks(request):
         'tank':tank,
     }
     return render(request, "all_tanks.html",data)
+
+
+@login_required(login_url='/login')
 
 def draw_line(request):
     
@@ -194,26 +235,52 @@ def get_markers_by_path_id():
 
 
 
-from django.views.decorators.csrf import csrf_exempt
+
+
+from django.db import transaction
 
 @csrf_exempt
-def update_marker_point(request):
+def save_marker_point_id(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         marker_id = data.get('marker_id')
+        new_point_id = data.get('new_point_id')
         path_id = data.get('path_id')
         
+        print(marker_id, new_point_id, path_id)  # Check if the marker_id is received
+        
+        # Check if the marker ID is valid
+        if not marker_id:
+            return JsonResponse({'success': False, 'error': 'Invalid marker ID'})
+
         try:
-            # Fetch the latest point_id for the given path_id
-            latest_point_id = marker.objects.filter(path_id=path_id).latest('point_id').point_id
-            # Update the marker's point_id
-            marker_obj = marker.objects.get(point_id=marker_id)
-            marker_obj.point_id = latest_point_id + 1  # Increment the point_id
-            marker_obj.save()
-            return JsonResponse({'success': True})
+            with transaction.atomic():
+                marker_obj = marker.objects.get(id=marker_id)
+                marker_obj.point_id = new_point_id
+                marker_obj.path_id = path_id
+                marker_obj.save()
         except marker.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Marker not found'})
-        except marker.MultipleObjectsReturned:
-            return JsonResponse({'success': False, 'error': 'Multiple markers found for the same path'})
+
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@csrf_exempt
+def forextend(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        marker_id = data.get('marker_id')
+        new_point_id = data.get('new_point_id')
+        path_id = data.get('path_id')
+        
+        print(marker_id, new_point_id, path_id)  # Check if the marker_id is received
+        
+        # Check if the marker ID is valid
+        
+    
+
+        return JsonResponse({'success': True})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})

@@ -26,8 +26,13 @@ urlpatterns = [
     path("draw_line",views.draw_line, name="draw_line"),
     path("save_markers",views.save_markers, name="save_markers"),
     path("get_markers",views.get_markers, name="get_markers"),
+    path("login",views.login, name="login"),
     path("get_existing_marker",views.get_existing_marker, name="get_existing_marker"),
-    path("update_marker_point",views.update_marker_point, name="update_marker_point"),
- 
+    
+    path('save_marker_point_id', views.save_marker_point_id, name='save_marker_point_id'), 
+
+    path('logout', views.logout, name='logout'), 
+    
+    
  
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
