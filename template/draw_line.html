@@ -34,8 +34,29 @@
     <button onclick="undo()">Undo</button>
     <button onclick="redo()">Redo</button>
     <button onclick="clearMarkers()">Clear All</button>
+
+    <button onclick="location.reload();">Refresh</button>
+
+    &nbsp;
+    &nbsp;
+    &nbsp;
+    &nbsp;
+
+
     <button onclick="displayResults()">Save</button>
     <button onclick="extend_path()">Extend</button>
+    <button onclick="delete_marker()">Delete</button>
+
+
+
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
 
 
@@ -58,6 +79,8 @@
     var up_index;
     var up_path_id;
     var extend_signal;
+
+    
 
     
     
@@ -479,6 +502,23 @@
             });
     }
 
+    
+
+    function delete_marker() {
+        
+
+        if (confirm("are you  sure to remove this point?") == true) {
+            window.location.href='/delete_marker/'+up_path_id+"/"+up_index;
+            
+          } else {
+            text = "You canceled!";
+          }
+
+
+    }
+
+
+   
 
     </script>
 

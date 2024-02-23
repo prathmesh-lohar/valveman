@@ -26,6 +26,8 @@ urlpatterns = [
     path("draw_line",views.draw_line, name="draw_line"),
     path("save_markers",views.save_markers, name="save_markers"),
     path("extend",views.extend, name="extend"),
+    path("delete_marker/<int:path_id>/<int:point_id>",views.delete_marker, name="delete_marker"),
+    
     
     path("get_markers",views.get_markers, name="get_markers"),
     path("login",views.login, name="login"),

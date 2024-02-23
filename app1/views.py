@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, HttpResponse
 
 from app1.models import tanks
 from django.http import JsonResponse
@@ -16,6 +16,9 @@ from django.contrib.auth.models import User,auth
 from django.shortcuts import render,HttpResponse,redirect
 
 from django.contrib.auth.decorators import login_required
+
+from django.contrib import messages
+
 
 up_index = 0
 up_path_id = 0
@@ -170,34 +173,42 @@ def extend(request):
         new_path_id = up_path_id
         
         start = int(up_index)
+        
+        last_marker = marker.objects.filter(path_id=latest_path_id).last()
+        
+        if up_index == last_marker.point_id:
 
-        # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
-        for index, marker_info in enumerate(markers_data, start=start+1):
-            lat = marker_info.get('latitude')
-            lon = marker_info.get('longitude')
-            marker_type = marker_info.get('type')
+            # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+            for index, marker_info in enumerate(markers_data, start=start+1):
+                lat = marker_info.get('latitude')
+                lon = marker_info.get('longitude')
+                marker_type = marker_info.get('type')
 
-            # Check if a marker with the same latitude, longitude, and type already exists
-            existing_marker = marker.objects.filter(
-                latitude=lat,
-                longitude=lon,
-                type=marker_type
-            ).first()
+                # Check if a marker with the same latitude, longitude, and type already exists
+                existing_marker = marker.objects.filter(
+                    latitude=lat,
+                    longitude=lon,
+                    type=marker_type
+                ).first()
 
-            if existing_marker:
-                # Skip saving duplicate data
-                continue
+                if existing_marker:
+                    # Skip saving duplicate data
+                    continue
 
-            new_marker = marker.objects.create(
-                path_id=new_path_id,
-                point_id=index,  # Use the index variable for sequential point_id
-                latitude=lat,
-                longitude=lon,
-                type=marker_type
-            )
-            new_marker.save()
+                new_marker = marker.objects.create(
+                    path_id=new_path_id,
+                    point_id=index,  # Use the index variable for sequential point_id
+                    latitude=lat,
+                    longitude=lon,
+                    type=marker_type
+                )
+                new_marker.save()
 
-        return JsonResponse({'success': True})
+            messages.success(request, 'extended successfully')
+            
+            return JsonResponse({'success': True})
+        else:
+            messages.error(request, 'selcted point was not last point of line')
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
@@ -347,3 +358,18 @@ def forextend(request):
         return JsonResponse({'success': True})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+# to delete marker
+
+
+def delete_marker(request,path_id,point_id):
+    
+    obj = marker.objects.get(path_id=path_id,point_id=point_id)
+    
+    obj.delete()
+    
+    messages.error(request, 'marker deleted')
+    
+    return redirect(request.META.get('HTTP_REFERER'))
