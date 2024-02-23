@@ -25,8 +25,6 @@ urlpatterns = [
     path("all_tanks",views.all_tanks, name="all_tanks"),
     path("draw_line",views.draw_line, name="draw_line"),
     path("save_markers",views.save_markers, name="save_markers"),
-    path("extend",views.extend, name="extend"),
-    
     path("get_markers",views.get_markers, name="get_markers"),
     path("login",views.login, name="login"),
     path("get_existing_marker",views.get_existing_marker, name="get_existing_marker"),

@@ -17,11 +17,16 @@ from django.shortcuts import render,HttpResponse,redirect
 
 from django.contrib.auth.decorators import login_required
 
+up_index = 0
+up_path_id = 0
+
 
 # Create your views here.
 @login_required(login_url='/login')
 
 def index(request):
+    
+    
     tank = tanks.objects.all()
     # print(tank)
     
@@ -61,6 +66,8 @@ def login (request):
 @login_required(login_url='/login')
 
 def all_tanks(request):
+    print(up_index)
+    
     tank = tanks.objects.all()
     # print(tank)
     
@@ -142,6 +149,62 @@ def save_markers(request):
         return JsonResponse({'success': True})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+def extend(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        markers_data = data.get('markers', [])  # Retrieve the markers array from the data
+        up_index = data.get('up_index')
+        up_path_id = data.get('up_path_id')
+        
+        print("up_index:",up_path_id, "up_path_id",up_path_id)
+
+        # Fetch the latest path_id from the database
+        # latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
+        # new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
+        
+        latest_path_id = up_path_id
+        new_path_id = up_path_id
+        
+        start = int(up_index)
+
+        # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+        for index, marker_info in enumerate(markers_data, start=start+1):
+            lat = marker_info.get('latitude')
+            lon = marker_info.get('longitude')
+            marker_type = marker_info.get('type')
+
+            # Check if a marker with the same latitude, longitude, and type already exists
+            existing_marker = marker.objects.filter(
+                latitude=lat,
+                longitude=lon,
+                type=marker_type
+            ).first()
+
+            if existing_marker:
+                # Skip saving duplicate data
+                continue
+
+            new_marker = marker.objects.create(
+                path_id=new_path_id,
+                point_id=index,  # Use the index variable for sequential point_id
+                latitude=lat,
+                longitude=lon,
+                type=marker_type
+            )
+            new_marker.save()
+
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+
 
 
 def get_existing_marker(request):
