@@ -23,6 +23,9 @@ from django.contrib import messages
 up_index = 0
 up_path_id = 0
 
+# to get tank type
+type=None
+
 
 # Create your views here.
 @login_required(login_url='/login')
@@ -85,6 +88,7 @@ def all_tanks(request):
 
 def draw_line(request):
     
+    
     tank = tanks.objects.all()
     
     markers = marker.objects.all()
@@ -128,6 +132,14 @@ def save_markers(request):
             lat = marker_info.get('latitude')
             lon = marker_info.get('longitude')
             marker_type = marker_info.get('type')
+            
+            print(marker_type)
+          
+            # for tank icons
+            
+            if marker_type == 'None':
+                marker_type = 'tank'
+            
 
             # Check if a marker with the same latitude, longitude, and type already exists
             existing_marker = marker.objects.filter(
@@ -140,14 +152,18 @@ def save_markers(request):
                 # Skip saving duplicate data
                 continue
 
+           
             new_marker = marker.objects.create(
-                path_id=new_path_id,
-                point_id=index,  # Use the index variable for sequential point_id
-                latitude=lat,
-                longitude=lon,
-                type=marker_type
-            )
+                    path_id=new_path_id,
+                    point_id=index,  # Use the index variable for sequential point_id
+                    latitude=lat,
+                    longitude=lon,
+                    type=marker_type
+                )
             new_marker.save()
+          
+                
+            
 
         return JsonResponse({'success': True})
     else:
@@ -256,13 +272,29 @@ def get_existing_marker(request):
     
 def get_markers(request):
     
-    from app1.models import  marker
+    from app1.models import  marker,tanks
     
     markers = marker.objects.all()
     markers_by_path = get_markers_by_path_id()
 
     # Serialize marker data
     serialized_markers = []
+    
+    #tanks
+    tanks = tanks.objects.all()
+    all_tanks = []
+    
+    
+    for marker in tanks:
+        all_tanks.append({
+            'latitude': marker.latitude,
+            'longitude': marker.longitude,
+            
+            # Add other fields if needed
+           
+        })
+      
+    
     for marker in markers:
         serialized_markers.append({
             'latitude': marker.latitude,
@@ -281,7 +313,7 @@ def get_markers(request):
     
 
     # Return serialized marker data as JSON response
-    return JsonResponse({'success': True, 'markers': serialized_markers, 'markers_by_path':markers_by_path})
+    return JsonResponse({'success': True, 'markers': serialized_markers, 'markers_by_path':markers_by_path, 'all_tanks':all_tanks})
         
         
         

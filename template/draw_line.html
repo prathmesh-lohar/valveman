@@ -29,6 +29,8 @@
             <option value="valve">Valve</option>
             <option value="branch">Branch</option>
             <option value="pipe">Pipe</option>
+            
+
         </select>
     </div>
     <button onclick="undo()">Undo</button>
@@ -73,6 +75,8 @@
 
     var positions = [];
 
+    var currentMarkerType; // Global variable to store the type of the current marker
+
 
     //for index and path
 
@@ -80,7 +84,7 @@
     var up_path_id;
     var extend_signal;
 
-    
+    var is_tank;
 
     
     
@@ -90,7 +94,7 @@
                 lat: 20.9025, // Latitude of Dhule, Maharashtra
                 lng: 74.7774 // Longitude of Dhule, Maharashtra
             },
-            zoom: 12,
+            zoom: 13,
             mapTypeControl: true,
             mapTypeId: google.maps.MapTypeId.HYBRID
         });
@@ -104,6 +108,9 @@
             if (locationType === 'cancel') {
                 return;
             }
+
+            currentMarkerType = locationType; // Update the currentMarkerType
+
             addMarker(event.latLng, locationType);
 
 
@@ -112,6 +119,8 @@
 
 
     }
+
+    
 
 
     //show stored markers
@@ -127,6 +136,10 @@
 
                     });
 
+
+                    // Draw lines between markers
+                    drawTanksOnMap(data.all_tanks);
+
                     // Draw lines between markers
 
                 } else {
@@ -137,6 +150,37 @@
                 console.error('Error fetching stored markers:', error);
             });
     }
+
+
+    //tanks
+
+    function drawTanksOnMap(tanks) {
+        tanks.forEach(tank => {
+            // Create a marker for each tank
+            var tankMarker = new google.maps.Marker({
+                position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
+                map: map,
+                icon: '{% static 'tank.png' %}',  // Use the appropriate tank icon
+                // You may customize other properties of the marker as needed
+            });
+    
+            // Add click event listener to the tank marker
+            tankMarker.addListener('click', function() {
+                
+                // Clear previous lines if any
+                clearLines();
+    
+                // Add the tank marker as the first marker
+                selectedMarkers = [tankMarker];
+                currentMarkerType = "tank";
+                // Start drawing a line from this tank
+                startLineFromTank(tankMarker.getPosition());
+            });
+        });
+    }
+    
+
+
 
     function drawLinesBetweenMarkers(markersByPath) {
 
@@ -150,7 +194,7 @@
             var line = new google.maps.Polyline({
                 path: path,
                 geodesic: true,
-                strokeColor: '#FF0000', // Change the stroke color if needed
+                strokeColor: '#004eff', // Change the stroke color if needed
                 strokeOpacity: 1.0,
                 strokeWeight: 2,
                 map: map
@@ -158,6 +202,33 @@
             lines.push(line);
         }
     }
+
+
+
+    //to clear prev lines
+    
+    function clearLines() {
+        for (var i = 0; i < lines.length; i++) {
+            lines[i].setMap(null);
+        }
+        lines = [];
+    }
+    
+    function startLineFromTank(tankPosition) {
+        google.maps.event.addListenerOnce(map, 'click', function (event) {
+            var line = new google.maps.Polyline({
+                path: [tankPosition, event.latLng],
+                geodesic: true,
+                strokeColor: '#ff8f00',
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+                map: map
+            });
+            lines.push(line);
+        });
+    }
+    
+
 
     // draw line between saved marker
 
@@ -187,8 +258,53 @@
     var selectedMarkers = []; // Array to store selected markers
 
 
-
     function addMarker(location, type) {
+        var info = { type: type };
+        if (type === 'valve') {
+            info.name = "v1";
+            info.keySize = "def";
+        } else if (type === 'pipe') {
+            info.pipeType = "p1";
+            info.pipeSize = "def";
+        }
+    
+        // Set marker type to 'tank' if it is 'None'
+        if (type === 'None') {
+            type = 'tank';
+        }
+    
+        var marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            draggable: true,
+            animation: google.maps.Animation.DROP,
+            icon: getIconForType(type),
+            info: info
+        });
+    
+        selectedMarkers.push(marker);
+    
+        if (selectedMarkers.length > 1) {
+            // Draw line between the newly added marker and the previous marker
+            var previousMarker = selectedMarkers[selectedMarkers.length - 2];
+            var line = new google.maps.Polyline({
+                path: [previousMarker.getPosition(), location],
+                geodesic: true,
+                strokeColor: '#ff8f00',
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+                map: map
+            });
+            lines.push(line);
+        }
+    
+        addToUndoStack({ action: 'add', marker: marker });
+    
+        clearRedoStack();
+    }
+    
+
+    /*function addMarker(location, type) {
         var info = { type: type };
         if (type === 'valve') {
             info.name = "v1";
@@ -219,7 +335,7 @@
             var line = new google.maps.Polyline({
                 path: [previousMarker.getPosition(), location],
                 geodesic: true,
-                strokeColor: '#0000FF',
+                strokeColor: '#ff8f00',
                 strokeOpacity: 1.0,
                 strokeWeight: 2,
                 map: map
@@ -230,7 +346,7 @@
         addToUndoStack({ action: 'add', marker: marker });
 
         clearRedoStack();
-    }
+    }*/
 
 
 
@@ -307,6 +423,13 @@
                 return '{% static 'branch.png' %}'; // Branch icon
             case 'pipe':
                 return 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'; // Pipe icon
+
+            case 'tank':
+                return '{% static 'tank.png' %}'
+
+            case 'None':
+                return  null;
+                
             default:
                 return null;
         }
@@ -319,11 +442,18 @@
 
         // Extract latitude, longitude, and type from selected markers
         var selectedMarkersData = selectedMarkers.map(function (marker) {
-            return {
-                latitude: marker.getPosition().lat(),
-                longitude: marker.getPosition().lng(),
-                type: marker.info.type // Assuming type is stored in the marker's info property
-            };
+            
+                var data = {
+                    latitude: marker.getPosition().lat(),
+                    longitude: marker.getPosition().lng(),
+                };
+            
+              
+                data.type = marker.info ? marker.info.type : null;// Assuming type is stored in the marker's info property
+                
+            
+                return data;
+
         });
 
         // Save selected markers
@@ -382,7 +512,7 @@
             var line = new google.maps.Polyline({
                 path: [selectedMarker.getPosition(), position],
                 geodesic: true,
-                strokeColor: '#0000FF',
+                strokeColor: '#ff8f00',
                 strokeOpacity: 1.0,
                 strokeWeight: 2,
                 map: map
@@ -466,13 +596,22 @@
 
 
         // Extract latitude, longitude, and type from selected markers
+        // Extract latitude, longitude, and type from selected markers
         var selectedMarkersData = selectedMarkers.map(function (marker) {
-            return {
+            var data = {
                 latitude: marker.getPosition().lat(),
                 longitude: marker.getPosition().lng(),
-                type: marker.info.type // Assuming type is stored in the marker's info property
             };
+
+            // Check if is_tank is equal to "yes"
+           
+                 // If is_tank is not "yes", set the type based on marker's type
+                data.type = marker.info.type; // Assuming type is stored in the marker's info property
+        
+
+            return data;
         });
+
 
         // Save selected markers
         fetch('/extend', {
