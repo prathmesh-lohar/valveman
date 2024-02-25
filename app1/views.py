@@ -405,3 +405,104 @@ def delete_marker(request,path_id,point_id):
     messages.error(request, 'marker deleted')
     
     return redirect(request.META.get('HTTP_REFERER'))
+
+
+
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        marker_data = data.get('marker')
+        line_data = data.get('line')
+
+        # Save the marker
+        marker = marker.objects.create(
+            latitude=marker_data['latitude'],
+            longitude=marker_data['longitude'],
+            type=marker_data['type'],
+            path_id=marker_data['path_id'],
+            point_id=marker_data['point_id'],
+        )
+        marker.save()
+
+        # Save the line
+        line = Line.objects.create(
+            path_id=line_data['path_id'],
+            point_ids=json.dumps(line_data['point_ids']),
+        )
+        line.save()
+
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    
+ 
+@csrf_exempt
+def save_branch(request):
+    if request.method == 'POST':
+        # Read the JSON data from the request body
+        data = json.loads(request.body)
+        markers_data = data.get('markers', [])
+        
+        # Find the latest path_id
+        latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
+        new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
+
+        # Get up_index and up_path_id
+        up_index = data.get('up_index')
+        up_path_id = data.get('up_path_id')
+        print('up_index', up_index, 'up_path', up_path_id)
+        
+        # Find the branch_point
+        branch_point = marker.objects.filter(path_id=up_path_id, point_id=up_index).first()
+        if branch_point is None:
+            return JsonResponse({'success': False, 'error': 'Branch point not found'})
+
+        # Extract latitude and longitude of the branch point
+        first_point_lat = branch_point.latitude
+        first_point_long = branch_point.longitude
+
+        print("First point:", first_point_lat, first_point_long)
+
+        # Insert the first marker with branch point's coordinates and type 'branch'
+        new_marker = marker.objects.create(
+            path_id=new_path_id,
+            point_id=1,  # Assuming this is the first marker in the new path
+            latitude=first_point_lat,
+            longitude=first_point_long,
+            type='branch'  # Assuming 'branch' is the type for the first marker
+        )
+        new_marker.save()
+
+        # Iterate through the remaining markers data and save each marker to the database
+        for index, marker_info in enumerate(markers_data, start=2):  # Start from 2 as the first marker is already inserted
+            lat = marker_info.get('latitude')
+            lon = marker_info.get('longitude')
+            marker_type = marker_info.get('type')
+            
+            # Check if a marker with the same latitude, longitude, and type already exists
+            existing_marker = marker.objects.filter(
+                latitude=lat,
+                longitude=lon,
+                type=marker_type
+            ).first()
+
+            if existing_marker:
+                # Skip saving duplicate data
+                continue
+
+            # Save the marker to the database
+            new_marker = marker.objects.create(
+                path_id=new_path_id,
+                point_id=index,
+                latitude=lat,
+                longitude=lon,
+                type=marker_type
+            )
+            new_marker.save()
+ 
+        # Return a JSON response indicating success
+        return JsonResponse({'success': True, 'message': 'Branch markers saved successfully'})
+    else:
+        # If the request method is not POST, return an error response
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})

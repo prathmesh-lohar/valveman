@@ -7,7 +7,8 @@
     <style>
        
     </style>
-    {% comment %} <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script> {% endcomment %}
+    {% comment %} <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAdGAjzYAR434EVUQDnB-L0N2nZ47Itq2c&callback=initMap" async defer></script> {% endcomment %}
+
 
     <script src="{% static '/js/drawline.js' %}"></script>
 
@@ -28,6 +29,8 @@
             <option value="valve">Valve</option>
             <option value="branch">Branch</option>
             <option value="pipe">Pipe</option>
+            
+
         </select>
     </div>
     <button onclick="undo()">Undo</button>
@@ -45,6 +48,8 @@
     <button onclick="displayResults()">Save</button>
     <button onclick="extend_path()">Extend</button>
     <button onclick="delete_marker()">Delete</button>
+
+
 
     <!-- New button to save branch -->
     <button onclick="saveBranch()">Save Branch</button>
@@ -83,8 +88,6 @@
 
     var is_tank;
 
-    var clicked_branch;
-
     
     
     function initMap() {
@@ -99,7 +102,8 @@
         });
 
         fetchStoredMarkers();
-        addBranchMarkerListeners();
+
+
 
         google.maps.event.addListener(map, 'click', function (event) {
             var locationType = document.getElementById('locationType').value;
@@ -302,7 +306,50 @@
     }
     
 
-    
+    /*function addMarker(location, type) {
+        var info = { type: type };
+        if (type === 'valve') {
+            info.name = "v1";
+            info.keySize = "def";
+            //info.name = prompt('Enter valve name:');
+            //info.keySize = prompt('Enter valve key size:');
+        } else if (type === 'pipe') {
+            info.pipeType = "p1";
+            info.pipeSize = "def";
+            //info.pipeType = prompt('Enter pipe type:');
+            //info.pipeSize = prompt('Enter pipe size:');
+        }
+
+        var marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            draggable: true,
+            animation: google.maps.Animation.DROP,
+            icon: getIconForType(type),
+            info: info
+        });
+
+        selectedMarkers.push(marker);
+
+        if (selectedMarkers.length > 1) {
+            // Draw line between the newly added marker and the previous marker
+            var previousMarker = selectedMarkers[selectedMarkers.length - 2];
+            var line = new google.maps.Polyline({
+                path: [previousMarker.getPosition(), location],
+                geodesic: true,
+                strokeColor: '#ff8f00',
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+                map: map
+            });
+            lines.push(line);
+        }
+
+        addToUndoStack({ action: 'add', marker: marker });
+
+        clearRedoStack();
+    }*/
+
 
 
 
@@ -446,8 +493,6 @@
         var pointId = marker.pointId;
         up_path_id = pathId;
         up_index = pointId;
-
-       
        
         console.log('Marker clicked! Path ID:', up_path_id, 'Point ID:', up_index);
         
@@ -630,98 +675,29 @@
 
     //for branch
 
-    function addBranchMarkerListeners() {
-        google.maps.event.addListener(map, 'click', function (event) {
-            if (extend_signal == 1) {
-
-                extend_signal = 0;
-            }
-            else {
-                // Handle click event
-                if (is_tank == true) {
-
-                    is_tank = false;
-                } else {
-
-                    var locationType = document.getElementById('locationType').value;
-                    if (locationType === 'cancel') {
-                        return;
-                    }
-
-                    currentMarkerType = locationType; // Update the currentMarkerType
-
-                    addMarker(event.latLng, locationType);
-                }
-            }
-        });
-
-        google.maps.event.addListener(map, 'rightclick', function (event) {
-            is_tank = true;
-            if (extend_signal == 1) {
-
-                extend_signal = 0;
-            }
-            else {
-                // Handle right-click event
-                var locationType = document.getElementById('locationType').value;
-                if (locationType === 'cancel') {
-                    return;
-                }
-
-                currentMarkerType = locationType; // Update the currentMarkerType
-
-                addMarker(event.latLng, locationType);
-            }
-
-        });
-    }
 
 
-    // Save branch marker function
+    // Function to draw a line from a "branch" marker
+function drawLineFromBranch(branchMarker, position) {
+    // Draw a line from the "branch" marker to the clicked position
+    var line = new google.maps.Polyline({
+        path: [branchMarker.getPosition(), position],
+        geodesic: true,
+        strokeColor: '#ff8f00',
+        strokeOpacity: 1.0,
+        strokeWeight: 2,
+        map: map
+    });
+    lines.push(line);
 
-    function saveBranch() {
-        // Extract latitude, longitude, and type from selected markers
-        var selectedMarkersData = selectedMarkers.map(function (marker) {
-            var data = {
-                latitude: marker.getPosition().lat(),
-                longitude: marker.getPosition().lng(),
-                type: marker.info.type, // Assuming type is stored in the marker's info property
-                
-            };
-            return data;
-        });
+    // Save the drawn line with the first marker as type "branch"
 
-        // Save branch markers
-        fetch('/save_branch', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
-            },
-            body: JSON.stringify({
-                markers: selectedMarkersData,
-                up_index:up_index,
-                up_path_id:up_path_id,
-            }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Branch markers saved successfully!');
-                } else {
-                    console.error('Error saving branch markers:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error sending AJAX request:', error);
-            });
-    }
+}
 
-    
+// Function to save the drawn line with the first marker as type "branch"
 
-</script>
 
-</body>
+    </script>
 
-</html>
 
+  </body>
