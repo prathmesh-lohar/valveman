@@ -158,7 +158,8 @@ def save_markers(request):
                     point_id=index,  # Use the index variable for sequential point_id
                     latitude=lat,
                     longitude=lon,
-                    type=marker_type
+                    type=marker_type,
+                    
                 )
             new_marker.save()
           
@@ -216,7 +217,8 @@ def extend(request):
                     point_id=index,  # Use the index variable for sequential point_id
                     latitude=lat,
                     longitude=lon,
-                    type=marker_type
+                    type=marker_type,
+                    
                 )
                 new_marker.save()
 
@@ -364,6 +366,7 @@ def save_marker_point_id(request):
                 marker_obj = marker.objects.get(id=marker_id)
                 marker_obj.point_id = new_point_id
                 marker_obj.path_id = path_id
+                marker_obj.user = request.user
                 marker_obj.save()
         except marker.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Marker not found'})
@@ -398,7 +401,9 @@ def forextend(request):
 
 def delete_marker(request,path_id,point_id):
     
-    obj = marker.objects.get(path_id=path_id,point_id=point_id)
+    from app1.models import marker
+    
+    obj = marker.objects.filter(path_id=path_id,point_id=point_id).first()
     
     obj.delete()
     
@@ -470,7 +475,8 @@ def save_branch(request):
             point_id=1,  # Assuming this is the first marker in the new path
             latitude=first_point_lat,
             longitude=first_point_long,
-            type='branch'  # Assuming 'branch' is the type for the first marker
+            type='branch',  # Assuming 'branch' is the type for the first marker
+            
         )
         new_marker.save()
 
@@ -497,7 +503,8 @@ def save_branch(request):
                 point_id=index,
                 latitude=lat,
                 longitude=lon,
-                type=marker_type
+                type=marker_type,
+                
             )
             new_marker.save()
  
