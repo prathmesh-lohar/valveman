@@ -22,7 +22,7 @@ class tanks(models.Model):
     
 class marker(models.Model):
      
-     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
      
      # a unique integer identifier for each entry
      path_id = models.IntegerField(null=True, blank=True)

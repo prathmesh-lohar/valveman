@@ -24,7 +24,7 @@ up_index = 0
 up_path_id = 0
 
 # to get tank type
-type=None
+marker_type = "";
 
 
 # Create your views here.
@@ -137,8 +137,10 @@ def save_markers(request):
           
             # for tank icons
             
-            if marker_type == 'None':
+            # for tank icons
+            if marker_type is None:
                 marker_type = 'tank'
+
             
 
             # Check if a marker with the same latitude, longitude, and type already exists
@@ -148,9 +150,7 @@ def save_markers(request):
                 type=marker_type
             ).first()
 
-            if existing_marker:
-                # Skip saving duplicate data
-                continue
+            
 
            
             new_marker = marker.objects.create(
@@ -159,6 +159,7 @@ def save_markers(request):
                     latitude=lat,
                     longitude=lon,
                     type=marker_type,
+                    user_id=request.user.id
                     
                 )
             new_marker.save()

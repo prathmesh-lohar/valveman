@@ -423,7 +423,8 @@
         var info = { type: type };
         if (type === 'valve') {
             info.name = "v1";
-            info.keySize = "def";
+            //info.keySize = "def";
+            info.keySize = prompt("Please enter a value:");
         } else if (type === 'pipe') {
             info.pipeType = "p1";
             info.pipeSize = "def";
