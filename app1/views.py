@@ -41,7 +41,9 @@ def index(request):
         'tank':tank,
     }
     
-    return render(request, "index.html",data)
+    # return render(request, "index.html",data)
+    return redirect("/draw_line")
+
 
 
 def logout(request):
@@ -62,11 +64,14 @@ def login (request):
             
         if user is not None:
             auth.login(request, user)
-            return redirect('/')
+            # return redirect('/')
+            return redirect("/draw_line")
+            
         else:
             return HttpResponse("uname , password invalid ")
     
     return render(request, "login.html")
+    
 
 
 @login_required(login_url='/login')
