@@ -35,7 +35,7 @@ urlpatterns = [
     
     path('save_marker_point_id', views.save_marker_point_id, name='save_marker_point_id'), 
     path('save_branch', views.save_branch, name='save_branch'), 
-     
+    
     
     
 

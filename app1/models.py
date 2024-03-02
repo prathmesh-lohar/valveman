@@ -37,6 +37,14 @@ class marker(models.Model):
      latitude = models.FloatField(null=True,blank=True)
      longitude = models.FloatField(null=True,blank=True)
      
+     pip_material = models.CharField(max_length=255,null=True, blank=True)
+     pip_diameter = models.CharField(max_length=255,null=True, blank=True)
+     
+     valve_type = models.CharField(max_length=255,null=True, blank=True)
+     valve_key_size = models.CharField(max_length=255,null=True, blank=True)
+     valve_diameter = models.CharField(max_length=255,null=True, blank=True)
+     
+     
      # Dictionary to store markers by sequence number
 
      

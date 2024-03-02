@@ -13,8 +13,8 @@
 
     <link rel="stylesheet" href="{% static '/css/style.css' %}">
 
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAdGAjzYAR434EVUQDnB-L0N2nZ47Itq2c&callback=initMap"></script>
     
+  
      <!-- Font Awesome -->
      <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
      <!-- Google Fonts -->
@@ -27,9 +27,13 @@
      <!-- MDB -->
      <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.1.0/mdb.min.css" rel="stylesheet" />
 
+
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+     
+
 </head>
 
-<body onload="myFunction()">
+<body >
 
 
     <nav class="navbar navbar-expand-lg navbar-light bg-body-tertiary ">
@@ -152,19 +156,13 @@
     
 
 
+    
+
+
+
     <div id="map"></div>
 
 
-    {% if messages %}
-    <ul class="messages" >
-        {% for message in messages %}
-            {% comment %} <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li> {% endcomment %}
-
-            <!-- The actual snackbar -->
-            <div id="snackbar" >{{ message }}</div>
-        {% endfor %}
-    </ul>
-    {% endif %}
 
 
 
@@ -179,6 +177,9 @@
                 <option value="pipe">Pipe</option>
             </select>
         </div>
+
+       
+
 
         
         <button class="btn btn-outline-dark my-2" onclick="undo()"><span class="fa fa-undo"></button>
@@ -210,11 +211,74 @@
         <button class="btn btn-danger my-2" onclick="delete_marker()">Delete</button>
 
         <!-- Use a button to open the snackbar -->
+        
+
+
+        {% comment %} marker {% endcomment %}
+
+        <div id="pipeModal" class="modal">
+            <div class="modal-content">
+              <span class="close">&times;</span>
+              <label for="pipeType">Pipe Material:</label>
+
+            
+
+            <select id="pipeType">
+                <option value="CI" > CI</option>
+                <option value="PVC" > PVC</option>
+                <option value="MS" > MS</option>
+                <option value="HDP" > HDP</option>
+                <option value="DI" > DI</option>
+                <option value="DI" > RCP</option>
+                <option value="Other" > Other</option>
+            </select>
 
 
 
-    
-     
+              <label for="pipeDiameter">Pipe Diameter:</label>
+              <input type="text" id="pipeDiameter">
+              <button id="savePipeInfo">Done</button>
+            </div>
+          </div>
+
+
+          {% comment %} for valve {% endcomment %}
+
+          <div id="vModal" class="modal">
+            <div class="modal-content">
+              <span class="close">&times;</span>
+              <label for="valve_type">Valve Type:</label>
+             
+
+              <select id="valve_type">
+                <option value="RCP" > RCP</option>
+                <option value="Foot Valve" > Foot Valve</option>
+                <option value="Actuator Valve" > Actuator Valve</option>
+                <option value="Butterfly Valve" > Butterfly Valve</option>
+                <option value="Gate Valve" > Gate Valve</option>
+                <option value="Pressure Relief Valve" > Pressure Relief Valve</option>
+                <option value="Check Valve" > Check Valve</option> 
+                <option value="Position Valve" > Position Valve</option> 
+                <option value="Flange Valve" > Flange Valve</option> 
+                <option value="Knife Valve" >Knife Valve </option> 
+                <option value="Other" >Other </option> 
+              </select>
+                 
+
+                <label for="valve_key_size">Valve Type:</label>
+
+
+              <input type="text" id="valve_key_size">
+
+              <label for="valve_diameter">Valve Diameter:</label>
+              <input type="text" id="valve_diameter">
+
+              <button id="savevInfo">Done</button>
+            </div>
+          </div>
+          
+      
+        
 
     </div>
 
@@ -223,6 +287,8 @@
 
 
 <script>
+
+    
 
     var map;
     var markers = [];
@@ -247,6 +313,17 @@
     var is_tank;
 
     var clicked_branch;
+
+    var selectedMarkersData;
+
+    var pipe_material = [];
+    var pipe_diameter = [];
+
+    var valve_type= [];
+    var valve_diameter = [];
+    var valve_key_size = [];
+
+    var selectedMarkers = []; // Array to store selected markers
 
     
     
@@ -327,15 +404,31 @@
     
             // Add click event listener to the tank marker
             tankMarker.addListener('click', function() {
-                
+                //alert("Tank selected: " );
+                if (confirm("Do You Want To Select This Tank ?")) {
                 // Clear previous lines if any
                 clearLines();
     
                 // Add the tank marker as the first marker
                 selectedMarkers = [tankMarker];
                 currentMarkerType = "tank";
+
+                pipe_material.push(null);
+                pipe_diameter.push(null);
+
+                valve_diameter.push(null);
+                valve_key_size.push(null);
+                valve_type.push(null);
+
                 // Start drawing a line from this tank
                 startLineFromTank(tankMarker.getPosition());
+                }
+                else{
+
+                }
+                
+                
+              
             });
         });
     }
@@ -416,23 +509,46 @@
 
     //
 
-    var selectedMarkers = []; // Array to store selected markers
-
+    
 
     function addMarker(location, type) {
         var info = { type: type };
         if (type === 'valve') {
             info.name = "v1";
-            //info.keySize = "def";
-            info.keySize = prompt("Please enter a value:");
+            
+
+
+            showvModalPopupv();
+            
         } else if (type === 'pipe') {
             info.pipeType = "p1";
-            info.pipeSize = "def";
+
+            
+        
+            showModalPopup();
+
+        }
+        else if(type === 'branch')
+        {
+            type = 'branch';
+            
+            pipe_material.push(null)
+            pipe_diameter.push(null)
+            valve_type.push(null);
+            valve_diameter.push(null);
+            valve_key_size.push(null);
+            
         }
     
         // Set marker type to 'tank' if it is 'None'
         if (type === 'None') {
             type = 'tank';
+
+            pipe_material.push(null)
+            pipe_diameter.push(null)
+            valve_type.push(null);
+            valve_diameter.push(null);
+            valve_key_size.push(null);
         }
     
         var marker = new google.maps.Marker({
@@ -541,7 +657,7 @@
             case 'branch':
                 return '{% static 'branch.png' %}'; // Branch icon
             case 'pipe':
-                return 'None'; // Pipe icon
+                return '{% static 'pipe.png' %}'; // Pipe icon
 
             case 'tank':
                 return '{% static 'tank.png' %}'
@@ -554,7 +670,7 @@
         }
     }
 
-    function displayResults() {
+    {% comment %} function displayResults() {
         console.log("Selected Markers: ", selectedMarkers);
     
 
@@ -565,14 +681,17 @@
                 var data = {
                     latitude: marker.getPosition().lat(),
                     longitude: marker.getPosition().lng(),
+                    
                 };
-            
+                
               
                 data.type = marker.info ? marker.info.type : null;// Assuming type is stored in the marker's info property
-                
+               
+
                 
             
                 return data;
+                
 
         });
 
@@ -585,6 +704,12 @@
             },
             body: JSON.stringify({
                 markers: selectedMarkersData,
+                pipe_material : pipe_material,
+                pipe_diameter : pipe_diameter,
+
+                valve_type : valve_type,
+                valve_diameter : valve_diameter,
+                valve_key_size : valve_key_size,
 
             }),
         })
@@ -592,15 +717,78 @@
             .then(data => {
                 if (data.success) {
                     console.log('Selected markers saved successfully!');
+                    alert('Saved Successfully');
+                    location.reload();
                     console.log(selectedMarkersData);
                 } else {
                     console.error('Error saving selected markers:', data.error);
+                    alert('Error saving selected markers:', data.error);
                 }
             })
             .catch(error => {
                 console.error('Error sending AJAX request:', error);
             });
+    } {% endcomment %}
+
+    function displayResults() {
+        console.log("Selected Markers: ", selectedMarkers);
+    
+        // Remove duplicate markers based on latitude and longitude
+        var uniqueSelectedMarkers = [];
+        var addedLatLngs = {}; // Track added latLng combinations
+        selectedMarkers.forEach(function(marker) {
+            var latLngKey = marker.getPosition().lat() + "," + marker.getPosition().lng();
+            if (!addedLatLngs.hasOwnProperty(latLngKey)) {
+                uniqueSelectedMarkers.push(marker);
+                addedLatLngs[latLngKey] = true;
+            }
+        });
+    
+        // Extract latitude, longitude, and type from selected markers
+        var selectedMarkersData = uniqueSelectedMarkers.map(function(marker) {
+            var data = {
+                latitude: marker.getPosition().lat(),
+                longitude: marker.getPosition().lng(),
+            };
+            data.type = marker.info ? marker.info.type : null; // Assuming type is stored in the marker's info property
+            return data;
+        });
+    
+        // Save selected markers
+        fetch('/save_markers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
+            },
+            body: JSON.stringify({
+                markers: selectedMarkersData,
+                pipe_material: pipe_material,
+                pipe_diameter: pipe_diameter,
+                valve_type: valve_type,
+                valve_diameter: valve_diameter,
+                valve_key_size: valve_key_size,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Selected markers saved successfully!');
+                alert('Saved Successfully');
+                location.reload();
+                console.log(selectedMarkersData);
+            } else {
+                console.error('Error saving selected markers:', data.error);
+                alert('Error saving selected markers:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error sending AJAX request:', error);
+        });
     }
+    
+    
+
 
     // Function to handle marker clicks
 
@@ -760,15 +948,26 @@
                 up_index:up_index,
                 up_path_id:up_path_id,
 
+                pipe_material: pipe_material,
+                pipe_diameter: pipe_diameter,
+                valve_type: valve_type,
+                valve_diameter: valve_diameter,
+                valve_key_size: valve_key_size,
+
             }),
         })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     console.log('Selected markers saved successfully!');
+                    alert('Extended successfully');
+                    location.reload();
+
                     console.log(selectedMarkersData);
                 } else {
                     console.error('Error saving selected markers:', data.error);
+                    alert('Error saving selected markers');
+
                 }
             })
             .catch(error => {
@@ -836,6 +1035,8 @@
                 currentMarkerType = locationType; // Update the currentMarkerType
 
                 addMarker(event.latLng, locationType);
+
+                
             }
 
         });
@@ -867,12 +1068,20 @@
                 markers: selectedMarkersData,
                 up_index:up_index,
                 up_path_id:up_path_id,
+
+                pipe_material: pipe_material,
+                pipe_diameter: pipe_diameter,
+                valve_type: valve_type,
+                valve_diameter: valve_diameter,
+                valve_key_size: valve_key_size,
             }),
         })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     console.log('Branch markers saved successfully!');
+                    alert('Branch saved successfully!');
+                    location.reload();
                 } else {
                     console.error('Error saving branch markers:', data.error);
                 }
@@ -887,6 +1096,116 @@
 
 
 
+// Function to show the modal popup
+    function showModalPopup() {
+        var modal = document.getElementById('pipeModal');
+        modal.style.display = 'block';
+    }
+
+    // Save additional information when "Save" button is clicked
+    document.getElementById('savePipeInfo').addEventListener('click', function() {
+        var pipeType = document.getElementById('pipeType').value;
+        var pipeDiameter = document.getElementById('pipeDiameter').value;
+
+        // Save pipe type and diameter along with marker data
+        //saveMarkerWithAdditionalInfo(pipeType, pipeDiameter);
+
+        console.log(getpip_type(pipeType, pipeDiameter));
+
+
+        valve_type.push(null);
+        valve_diameter.push(null);
+        valve_key_size.push(null);
+
+
+        pipe_material.push(getpip_type(pipeType));
+        pipe_diameter.push(getpip_dim(pipeDiameter));
+
+
+    
+
+
+        // Close modal popup
+        var modal = document.getElementById('pipeModal');
+        modal.style.display = 'none';
+    });
+
+    // Function to save marker with additional information
+    function getpip_type(pipeType) {
+        // Add logic to save the marker along with additional information (pipeType and pipeDiameter)
+        // This might involve sending an AJAX request to the server.
+    
+        var pip_type = pipeType;
+        return pip_type;
+    }
+
+
+    function getpip_dim(pipeDiameter) {
+        // Add logic to save the marker along with additional information (pipeType and pipeDiameter)
+        // This might involve sending an AJAX request to the server.
+        
+        var pipe_diameter = pipeDiameter;
+        return pipe_diameter;
+    }
+
+
+//for valve 
+
+
+function showvModalPopupv() {
+    var modal = document.getElementById('vModal');
+    modal.style.display = 'block';
+}
+
+// Save additional information when "Save" button is clicked
+document.getElementById('savevInfo').addEventListener('click', function() {
+    var valve_type_input = document.getElementById('valve_type').value;
+    var valve_diameter_input = document.getElementById('valve_diameter').value;
+    var valve_key_size_input = document.getElementById('valve_key_size').value;
+
+    
+
+    // Save pipe type and diameter along with marker data
+    //saveMarkerWithAdditionalInfo(pipeType, pipeDiameter);
+  
+    pipe_material.push(null);
+    pipe_diameter.push(null);
+    
+    // Push values into respective arrays
+    valve_type.push(get_valve_type(valve_type_input));
+    valve_diameter.push(get_valve_diameter(valve_diameter_input));
+    valve_key_size.push(get_valve_key_size(valve_key_size_input));
+
+    // Close modal popup
+    var modal = document.getElementById('vModal');
+    modal.style.display = 'none';
+});
+
+// Function to save marker with additional information
+function get_valve_type(valve_type) {
+    // Add logic to save the marker along with additional information (pipeType and pipeDiameter)
+    // This might involve sending an AJAX request to the server.
+
+    var valve_type= valve_type;
+    return valve_type;
+}
+
+
+function get_valve_diameter(valve_diameter) {
+    // Add logic to save the marker along with additional information (pipeType and pipeDiameter)
+    // This might involve sending an AJAX request to the server.
+    
+    var valve_diameter = valve_diameter;
+    return valve_diameter;
+}
+
+function get_valve_key_size(valve_key_size) {
+    // Add logic to save the marker along with additional information (pipeType and pipeDiameter)
+    // This might involve sending an AJAX request to the server.
+    
+    var valve_key_size = valve_key_size;
+    return valve_key_size;
+}
 
 
     
@@ -894,77 +1213,10 @@
 </script>
 
 
-
-
-
-
-<script>
-    function myFunction() {
-        // Get the snackbar DIV
-        var x = document.getElementById("snackbar");
-      
-        // Add the "show" class to DIV
-        x.className = "show";
-      
-        // After 3 seconds, remove the show class from DIV
-        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
-      }
-
-</script>
-
-
-<style>
-
-    /* The snackbar - position it at the bottom and in the middle of the screen */
-#snackbar {
-  visibility: hidden; /* Hidden by default. Visible on click */
-  min-width: 250px; /* Set a default minimum width */
-  margin-left: -125px; /* Divide value of min-width by 2 */
-  background-color: #333; /* Black background color */
-  color: #fff; /* White text color */
-  text-align: center; /* Centered text */
-  border-radius: 2px; /* Rounded borders */
-  padding: 16px; /* Padding */
-  position: fixed; /* Sit on top of the screen */
-  z-index: 1; /* Add a z-index if needed */
-  left: 50%; /* Center the snackbar */
-  bottom: 30px; /* 30px from the bottom */
-}
-
-/* Show the snackbar when clicking on a button (class added with JavaScript) */
-#snackbar.show {
-  visibility: visible; /* Show the snackbar */
-  /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
-  However, delay the fade out process for 2.5 seconds */
-  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-  animation: fadein 0.5s, fadeout 0.5s 2.5s;
-}
-
-/* Animations to fade the snackbar in and out */
-@-webkit-keyframes fadein {
-  from {bottom: 0; opacity: 0;}
-  to {bottom: 30px; opacity: 1;}
-}
-
-@keyframes fadein {
-  from {bottom: 0; opacity: 0;}
-  to {bottom: 30px; opacity: 1;}
-}
-
-@-webkit-keyframes fadeout {
-  from {bottom: 30px; opacity: 1;}
-  to {bottom: 0; opacity: 0;}
-}
-
-@keyframes fadeout {
-  from {bottom: 30px; opacity: 1;}
-  to {bottom: 0; opacity: 0;}
-}
-
-
-</style>
+ 
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAdGAjzYAR434EVUQDnB-L0N2nZ47Itq2c&callback=initMap"></script>
+    
 
 </body>
 
 </html>
-

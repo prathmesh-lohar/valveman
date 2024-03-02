@@ -121,56 +121,104 @@ from django.db.models import Max, Q
 
 from django.views.decorators.csrf import csrf_exempt
 
-@csrf_exempt
 
+# @csrf_exempt
+# def save_markers(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+#         latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
+#         new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
+
+#         for index, marker_info in enumerate(markers_data, start=1):
+#             lat = marker_info.get('latitude')
+#             lon = marker_info.get('longitude')
+#             marker_type = marker_info.get('type')
+            
+#             # Set default marker type if not provided
+#             if marker_type is None:
+#                 marker_type = 'tank'
+
+#             # Create a new marker
+#             new_marker = marker.objects.create(
+#                 path_id=new_path_id,
+#                 point_id=index,
+#                 latitude=lat,
+#                 longitude=lon,
+#                 type=marker_type,
+#                 user_id=request.user.id,
+#                 pip_material=pipe_material[index - 1] if index <= len(pipe_material) else None,
+#                 pip_diameter=pipe_diameter[index - 1] if index <= len(pipe_diameter) else None,
+#                 valve_type=valve_type[index - 1] if index <= len(valve_type) else None,
+#                 valve_key_size=valve_key_size[index - 1] if index <= len(valve_key_size) else None,
+#                 valve_diameter=valve_diameter[index - 1] if index <= len(valve_diameter) else None,
+#             )
+#             new_marker.save()
+
+#         # Move success message outside the loop
+#         messages.success(request, 'Markers saved successfully')
+
+#         return JsonResponse({'success': True})
+#     else:
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
 def save_markers(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        markers_data = data.get('markers', [])  # Retrieve the markers array from the data
-
-        # Fetch the latest path_id from the database
+        markers_data = data.get('markers', [])
+        
+        pipe_material = data.get('pipe_material', [])
+        pipe_diameter = data.get('pipe_diameter', [])
+        valve_type = data.get('valve_type', [])
+        valve_diameter = data.get('valve_diameter', [])
+        valve_key_size = data.get('valve_key_size', [])
+        
+        print(markers_data)
+        print(pipe_material,pipe_diameter,valve_type,valve_diameter,valve_key_size)
+        
         latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
         new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
 
-        # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
         for index, marker_info in enumerate(markers_data, start=1):
             lat = marker_info.get('latitude')
             lon = marker_info.get('longitude')
             marker_type = marker_info.get('type')
             
-            print(marker_type)
-          
-            # for tank icons
-            
-            # for tank icons
+            # Set default marker type if not provided
             if marker_type is None:
                 marker_type = 'tank'
 
-            
-
-            # Check if a marker with the same latitude, longitude, and type already exists
-            existing_marker = marker.objects.filter(
-                latitude=lat,
-                longitude=lon,
-                type=marker_type
-            ).first()
-
-            
-
-           
-            new_marker = marker.objects.create(
+            # Check if a marker with the same path_id and point_id already exists
+            existing_marker = marker.objects.filter(path_id=new_path_id, point_id=index).first()
+            if existing_marker is None:
+                # Create a new marker
+                new_marker = marker.objects.create(
                     path_id=new_path_id,
-                    point_id=index,  # Use the index variable for sequential point_id
+                    point_id=index,
                     latitude=lat,
                     longitude=lon,
                     type=marker_type,
-                    user_id=request.user.id
+                    user_id=request.user.id,
                     
+                    pip_material=pipe_material[index - 1] if index <= len(pipe_material) else None,
+                    pip_diameter=pipe_diameter[index - 1] if index <= len(pipe_diameter) else None,
+                    
+                    valve_type=valve_type[index - 1] if index <= len(valve_type) else None,
+                    valve_key_size=valve_key_size[index - 1] if index <= len(valve_key_size) else None,
+                    valve_diameter=valve_diameter[index - 1] if index <= len(valve_diameter) else None,
                 )
-            new_marker.save()
-          
-                
-            
+                new_marker.save()
+
+        # Move success message outside the loop
+        messages.success(request, 'Markers saved successfully')
 
         return JsonResponse({'success': True})
     else:
@@ -178,7 +226,380 @@ def save_markers(request):
 
 
 
+# def extend(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])  # Retrieve the markers array from the data
+#         up_index = data.get('up_index')
+#         up_path_id = data.get('up_path_id')
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+        
+        
+#         print("up_index:",up_path_id, "up_path_id",up_path_id)
 
+#         # Fetch the latest path_id from the database
+#         # latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
+#         # new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
+        
+#         latest_path_id = up_path_id
+#         new_path_id = up_path_id
+        
+#         start = int(up_index)
+        
+#         last_marker = marker.objects.filter(path_id=latest_path_id).last()
+        
+#         if up_index == last_marker.point_id:
+
+#             # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+#             for index, marker_info in enumerate(markers_data, start=start+1):
+#                 lat = marker_info.get('latitude')
+#                 lon = marker_info.get('longitude')
+#                 marker_type = marker_info.get('type')
+
+#                 # Check if a marker with the same latitude, longitude, and type already exists
+#                 existing_marker = marker.objects.filter(
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type
+#                 ).first()
+
+#                 if existing_marker:
+#                     # Skip saving duplicate data
+#                     continue
+
+#                 new_marker = marker.objects.create(
+#                     path_id=new_path_id,
+#                     point_id=index,  # Use the index variable for sequential point_id
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type,
+                    
+#                     user_id = request.user.id,
+                    
+#                     pip_material=pipe_material[index - 1] if index <= len(pipe_material) else None,
+#                     pip_diameter=pipe_diameter[index - 1] if index <= len(pipe_diameter) else None,
+                    
+#                     valve_type=valve_type[index - 1] if index <= len(valve_type) else None,
+#                     valve_key_size=valve_key_size[index - 1] if index <= len(valve_key_size) else None,
+#                     valve_diameter=valve_diameter[index - 1] if index <= len(valve_diameter) else None,
+                    
+#                     )
+#                 new_marker.save()
+
+            
+            
+#             return JsonResponse({'success': True})
+#         else:
+#             messages.error(request, 'selcted point was not last point of line')
+#     else:
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+# @csrf_exempt
+# def extend(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])  # Retrieve the markers array from the data
+#         up_index = data.get('up_index')
+#         up_path_id = data.get('up_path_id')
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+#         print(markers_data)
+#         print(valve_type)
+        
+#         print("up_index:", up_index, "up_path_id:", up_path_id)
+
+#         # Fetch the latest path_id from the database
+#         latest_path_id = up_path_id
+#         new_path_id = up_path_id
+        
+#         start = int(up_index)
+        
+#         last_marker = marker.objects.filter(path_id=latest_path_id).last()
+        
+#         if up_index == last_marker.point_id:
+#             # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+#             for index, marker_info in enumerate(markers_data, start=start+1):
+#                 lat = marker_info.get('latitude')
+#                 lon = marker_info.get('longitude')
+#                 marker_type = marker_info.get('type')
+
+#                 # Check if a marker with the same latitude, longitude, and type already exists
+#                 existing_marker = marker.objects.filter(
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type
+#                 ).first()
+
+#                 if existing_marker:
+#                     # Skip saving duplicate data
+#                     continue
+
+#                 new_marker = marker.objects.create(
+#                     path_id=new_path_id,
+#                     point_id=index,  # Use the index variable for sequential point_id
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type,
+#                     user_id=request.user.id,
+#                 )
+#                 new_marker.save()
+
+#             return JsonResponse({'success': True})
+#         else:
+#             messages.error(request, 'Selected point was not the last point of the line')
+#             return JsonResponse({'success': False, 'error': 'Selected point was not the last point of the line'})
+#     else:
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+# @csrf_exempt
+# def extend(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])  # Retrieve the markers array from the data
+#         up_index = data.get('up_index')
+#         up_path_id = data.get('up_path_id')
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+#         print(markers_data)
+#         print(pipe_diameter)
+#         print(pipe_material)
+        
+#         print("up_index:", up_index, "up_path_id:", up_path_id)
+
+#         # Fetch the latest path_id from the database
+#         latest_path_id = up_path_id
+#         new_path_id = up_path_id
+        
+#         start = int(up_index)
+        
+#         last_marker = marker.objects.filter(path_id=latest_path_id).last()
+        
+#         if up_index == last_marker.point_id:
+#             # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+#             for index, marker_info in enumerate(markers_data, start=start+1):
+#                 lat = marker_info.get('latitude')
+#                 lon = marker_info.get('longitude')
+#                 marker_type = marker_info.get('type')
+
+#                 # Check if a marker with the same latitude, longitude, and type already exists
+#                 existing_marker = marker.objects.filter(
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type
+#                 ).first()
+
+#                 if existing_marker:
+#                     # Skip saving duplicate data
+#                     continue
+
+#                 # Calculate index for additional fields data
+#                 additional_index = index - start - 1
+
+#                 new_marker = marker.objects.create(
+#                     path_id=new_path_id,
+#                     point_id=index,  # Use the index variable for sequential point_id
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type,
+#                     user_id=request.user.id,
+#                     pip_material=pipe_material[additional_index] if additional_index < len(pipe_material) else None,
+#                     pip_diameter=pipe_diameter[additional_index] if additional_index < len(pipe_diameter) else None,
+#                     valve_type=valve_type[additional_index] if additional_index < len(valve_type) else None,
+#                     valve_key_size=valve_key_size[additional_index] if additional_index < len(valve_key_size) else None,
+#                     valve_diameter=valve_diameter[additional_index] if additional_index < len(valve_diameter) else None,
+#                 )
+#                 new_marker.save()
+
+#             return JsonResponse({'success': True})
+#         else:
+#             messages.error(request, 'Selected point was not the last point of the line')
+#             return JsonResponse({'success': False, 'error': 'Selected point was not the last point of the line'})
+#     else:
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])  # Retrieve the markers array from the data
+#         up_index = data.get('up_index')
+#         up_path_id = data.get('up_path_id')
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+#         print(markers_data)
+#         print(pipe_diameter)
+#         print(pipe_material)
+        
+#         print("up_index:", up_index, "up_path_id:", up_path_id)
+
+#         # Fetch the latest path_id from the database
+#         latest_path_id = up_path_id
+#         new_path_id = up_path_id
+        
+#         start = int(up_index)
+        
+#         last_marker = marker.objects.filter(path_id=latest_path_id).last()
+        
+#         if up_index == last_marker.point_id:
+#             # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+#             for index, marker_info in enumerate(markers_data, start=start+1):
+#                 lat = marker_info.get('latitude')
+#                 lon = marker_info.get('longitude')
+#                 marker_type = marker_info.get('type')
+
+#                 # Check if a marker with the same latitude, longitude, and type already exists
+#                 existing_marker = marker.objects.filter(
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type
+#                 ).first()
+
+#                 if existing_marker:
+#                     # Skip saving duplicate data
+#                     continue
+
+#                 # Calculate index for additional fields data
+#                 additional_index = index - start - 1
+
+#                 # Check if the values are empty strings
+#                 pip_material_value = pipe_material[additional_index] if additional_index < len(pipe_material) else None
+#                 pip_diameter_value = pipe_diameter[additional_index] if additional_index < len(pipe_diameter) else None
+#                 valve_type_value = valve_type[additional_index] if additional_index < len(valve_type) else None
+#                 valve_key_size_value = valve_key_size[additional_index] if additional_index < len(valve_key_size) else None
+#                 valve_diameter_value = valve_diameter[additional_index] if additional_index < len(valve_diameter) else None
+
+#                 # Skip saving if any value is an empty string
+#                 if '' in [pip_material_value, pip_diameter_value, valve_type_value, valve_key_size_value, valve_diameter_value]:
+#                     continue
+
+#                 new_marker = marker.objects.create(
+#                     path_id=new_path_id,
+#                     point_id=index,  # Use the index variable for sequential point_id
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type,
+#                     user_id=request.user.id,
+#                     pip_material=pip_material_value,
+#                     pip_diameter=pip_diameter_value,
+#                     valve_type=valve_type_value,
+#                     valve_key_size=valve_key_size_value,
+#                     valve_diameter=valve_diameter_value,
+#                 )
+#                 new_marker.save()
+
+#             return JsonResponse({'success': True})
+#         else:
+#             messages.error(request, 'Selected point was not the last point of the line')
+#             return JsonResponse({'success': False, 'error': 'Selected point was not the last point of the line'})
+#     else:
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+# @csrf_exempt
+# def extend(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])  # Retrieve the markers array from the data
+#         up_index = data.get('up_index')
+#         up_path_id = data.get('up_path_id')
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+#         print(markers_data)
+#         print(pipe_diameter)
+#         print(pipe_material)
+        
+#         print("up_index:", up_index, "up_path_id:", up_path_id)
+
+#         # Fetch the latest path_id from the database
+#         latest_path_id = up_path_id
+#         new_path_id = up_path_id
+        
+#         start = int(up_index)
+        
+#         last_marker = marker.objects.filter(path_id=latest_path_id).last()
+        
+#         if up_index == last_marker.point_id:
+#             # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
+#             for index, marker_info in enumerate(markers_data, start=start+1):
+#                 lat = marker_info.get('latitude')
+#                 lon = marker_info.get('longitude')
+#                 marker_type = marker_info.get('type')
+
+#                 # Check if a marker with the same latitude, longitude, and type already exists
+#                 existing_marker = marker.objects.filter(
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type
+#                 ).first()
+
+#                 if existing_marker:
+#                     # Skip saving duplicate data
+#                     continue
+
+#                 # Calculate index for additional fields data
+#                 additional_index = index - start
+
+#                 # Check if any of the additional fields are None
+#                 if (
+#                     additional_index >= len(pipe_material) or
+#                     additional_index >= len(pipe_diameter) or
+#                     additional_index >= len(valve_type) or
+#                     additional_index >= len(valve_diameter) or
+#                     additional_index >= len(valve_key_size)
+#                 ):
+#                     continue
+
+#                 new_marker = marker.objects.create(
+#                     path_id=new_path_id,
+#                     point_id=index,  # Use the index variable for sequential point_id
+#                     latitude=lat,
+#                     longitude=lon,
+#                     type=marker_type,
+#                     user_id=request.user.id,
+#                     pip_material=pipe_material[additional_index],
+#                     pip_diameter=pipe_diameter[additional_index],
+#                     valve_type=valve_type[additional_index],
+#                     valve_key_size=valve_key_size[additional_index],
+#                     valve_diameter=valve_diameter[additional_index],
+#                 )
+#                 new_marker.save()
+
+#             return JsonResponse({'success': True})
+#         else:
+#             messages.error(request, 'Selected point was not the last point of the line')
+#             return JsonResponse({'success': False, 'error': 'Selected point was not the last point of the line'})
+#     else:
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
 def extend(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -186,12 +607,19 @@ def extend(request):
         up_index = data.get('up_index')
         up_path_id = data.get('up_path_id')
         
-        print("up_index:",up_path_id, "up_path_id",up_path_id)
+        pipe_material = data.get('pipe_material', [])
+        pipe_diameter = data.get('pipe_diameter', [])
+        valve_type = data.get('valve_type', [])
+        valve_diameter = data.get('valve_diameter', [])
+        valve_key_size = data.get('valve_key_size', [])
+        
+        print(markers_data)
+        print(pipe_diameter)
+        print(pipe_material)
+        
+        print("up_index:", up_index, "up_path_id:", up_path_id)
 
         # Fetch the latest path_id from the database
-        # latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
-        # new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
-        
         latest_path_id = up_path_id
         new_path_id = up_path_id
         
@@ -200,9 +628,8 @@ def extend(request):
         last_marker = marker.objects.filter(path_id=latest_path_id).last()
         
         if up_index == last_marker.point_id:
-
             # Save latitude, longitude, and type to database with incremented path_id and sequential point_id
-            for index, marker_info in enumerate(markers_data, start=start+1):
+            for index, marker_info in enumerate(markers_data, start=start):
                 lat = marker_info.get('latitude')
                 lon = marker_info.get('longitude')
                 marker_type = marker_info.get('type')
@@ -218,26 +645,40 @@ def extend(request):
                     # Skip saving duplicate data
                     continue
 
+                # Calculate index for additional fields data
+                additional_index = index - start
+
+                # Check if any of the additional fields are None
+                if (
+                    additional_index >= len(pipe_material) or
+                    additional_index >= len(pipe_diameter) or
+                    additional_index >= len(valve_type) or
+                    additional_index >= len(valve_diameter) or
+                    additional_index >= len(valve_key_size)
+                ):
+                    continue
+
                 new_marker = marker.objects.create(
                     path_id=new_path_id,
                     point_id=index,  # Use the index variable for sequential point_id
                     latitude=lat,
                     longitude=lon,
                     type=marker_type,
-                    
+                    user_id=request.user.id,
+                    pip_material=pipe_material[additional_index],
+                    pip_diameter=pipe_diameter[additional_index],
+                    valve_type=valve_type[additional_index],
+                    valve_key_size=valve_key_size[additional_index],
+                    valve_diameter=valve_diameter[additional_index],
                 )
                 new_marker.save()
 
-            messages.success(request, 'extended successfully')
-            
             return JsonResponse({'success': True})
         else:
-            messages.error(request, 'selcted point was not last point of line')
+            messages.error(request, 'Selected point was not the last point of the line')
+            return JsonResponse({'success': False, 'error': 'Selected point was not the last point of the line'})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-
-
 
 
 
@@ -409,7 +850,8 @@ def delete_marker(request,path_id,point_id):
     
     from app1.models import marker
     
-    obj = marker.objects.filter(path_id=path_id,point_id=point_id).first()
+    obj = marker.objects.filter(path_id=path_id,point_id=point_id)
+    
     
     obj.delete()
     
@@ -449,11 +891,112 @@ def delete_marker(request,path_id,point_id):
     
  
 @csrf_exempt
+# def save_branch(request):
+#     if request.method == 'POST':
+#         # Read the JSON data from the request body
+#         data = json.loads(request.body)
+#         markers_data = data.get('markers', [])
+        
+#         pipe_material = data.get('pipe_material', [])
+#         pipe_diameter = data.get('pipe_diameter', [])
+#         valve_type = data.get('valve_type', [])
+#         valve_diameter = data.get('valve_diameter', [])
+#         valve_key_size = data.get('valve_key_size', [])
+        
+        
+#         # Find the latest path_id
+#         latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
+#         new_path_id = latest_path_id + 1 if latest_path_id is not None else 1
+
+#         # Get up_index and up_path_id
+#         up_index = data.get('up_index')
+#         up_path_id = data.get('up_path_id')
+#         print('up_index', up_index, 'up_path', up_path_id)
+        
+#         # Find the branch_point
+#         branch_point = marker.objects.filter(path_id=up_path_id, point_id=up_index).first()
+#         if branch_point is None:
+#             return JsonResponse({'success': False, 'error': 'Branch point not found'})
+
+#         # Extract latitude and longitude of the branch point
+#         first_point_lat = branch_point.latitude
+#         first_point_long = branch_point.longitude
+
+#         print("First point:", first_point_lat, first_point_long)
+
+#         # Insert the first marker with branch point's coordinates and type 'branch'
+#         new_marker = marker.objects.create(
+#             path_id=new_path_id,
+#             point_id=1,  # Assuming this is the first marker in the new path
+#             latitude=first_point_lat,
+#             longitude=first_point_long,
+#             type='branch',  # Assuming 'branch' is the type for the first marker
+            
+#             pip_material=pipe_material[index - 1] if index <= len(pipe_material) else None,
+#             pip_diameter=pipe_diameter[index - 1] if index <= len(pipe_diameter) else None,
+                    
+#             valve_type=valve_type[index - 1] if index <= len(valve_type) else None,
+#             valve_key_size=valve_key_size[index - 1] if index <= len(valve_key_size) else None,
+#             valve_diameter=valve_diameter[index - 1] if index <= len(valve_diameter) else None,
+#         )
+#         new_marker.save()
+
+#         # Iterate through the remaining markers data and save each marker to the database
+#         for index, marker_info in enumerate(markers_data, start=2):  # Start from 2 as the first marker is already inserted
+#             lat = marker_info.get('latitude')
+#             lon = marker_info.get('longitude')
+#             marker_type = marker_info.get('type')
+            
+#             pipe_material = data.get('pipe_material', [])
+#             pipe_diameter = data.get('pipe_diameter', [])
+#             valve_type = data.get('valve_type', [])
+#             valve_diameter = data.get('valve_diameter', [])
+#             valve_key_size = data.get('valve_key_size', [])
+            
+            
+            
+#             # Check if a marker with the same latitude, longitude, and type already exists
+#             existing_marker = marker.objects.filter(
+#                 latitude=lat,
+#                 longitude=lon,
+#                 type=marker_type
+#             ).first()
+
+#             if existing_marker:
+#                 # Skip saving duplicate data
+#                 continue
+
+#             # Save the marker to the database
+#             new_marker = marker.objects.create(
+#                 path_id=new_path_id,
+#                 point_id=index,
+#                 latitude=lat,
+#                 longitude=lon,
+#                 type=marker_type,
+                
+#             )
+#             new_marker.save()
+ 
+#         # Return a JSON response indicating success
+#         return JsonResponse({'success': True, 'message': 'Branch markers saved successfully'})
+#     else:
+#         # If the request method is not POST, return an error response
+#         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    
+    
+@csrf_exempt
 def save_branch(request):
     if request.method == 'POST':
         # Read the JSON data from the request body
         data = json.loads(request.body)
         markers_data = data.get('markers', [])
+        
+        pipe_material = data.get('pipe_material', [])
+        pipe_diameter = data.get('pipe_diameter', [])
+        valve_type = data.get('valve_type', [])
+        valve_diameter = data.get('valve_diameter', [])
+        valve_key_size = data.get('valve_key_size', [])
         
         # Find the latest path_id
         latest_path_id = marker.objects.aggregate(Max('path_id'))['path_id__max']
@@ -482,7 +1025,6 @@ def save_branch(request):
             latitude=first_point_lat,
             longitude=first_point_long,
             type='branch',  # Assuming 'branch' is the type for the first marker
-            
         )
         new_marker.save()
 
@@ -511,6 +1053,11 @@ def save_branch(request):
                 longitude=lon,
                 type=marker_type,
                 
+                pip_material=pipe_material[index - 2] if index - 2 < len(pipe_material) else None,
+                pip_diameter=pipe_diameter[index - 2] if index - 2 < len(pipe_diameter) else None,
+                valve_type=valve_type[index - 2] if index - 2 < len(valve_type) else None,
+                valve_key_size=valve_key_size[index - 2] if index - 2 < len(valve_key_size) else None,
+                valve_diameter=valve_diameter[index - 2] if index - 2 < len(valve_diameter) else None,
             )
             new_marker.save()
  
@@ -519,3 +1066,5 @@ def save_branch(request):
     else:
         # If the request method is not POST, return an error response
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+# alerts
