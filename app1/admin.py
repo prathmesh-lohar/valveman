@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import tanks,marker
+from .models import tanks,marker,booster,jw,wtp
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -16,6 +16,19 @@ class markerAdmin(ImportExportModelAdmin):
 
 @admin.register(tanks)
 class tanksAdmin(ImportExportModelAdmin):
+    pass
+
+
+@admin.register(booster)
+class boosterAdmin(ImportExportModelAdmin):
+    pass
+
+@admin.register(jw)
+class jwAdmin(ImportExportModelAdmin):
+    pass
+
+@admin.register(wtp)
+class wtpAdmin(ImportExportModelAdmin):
     pass
 
 # @admin.register(tanks)
