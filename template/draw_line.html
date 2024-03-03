@@ -223,7 +223,7 @@
 
             
 
-            <select id="pipeType">
+            <select id="pipeType" required>
                 <option value="CI" > CI</option>
                 <option value="PVC" > PVC</option>
                 <option value="MS" > MS</option>
@@ -403,7 +403,7 @@
             var tankMarker = new google.maps.Marker({
                 position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
                 map: map,
-                title: 'Uluru (Ayers Rock)',
+                title:  "Number: " + tank.tank_no + "\n" + "Name: " + tank.owt_tank_name + "\n" + "Position :" + tank.owt_position + "\n" + "Address: " + tank.owt_address,
                 icon: '{% static 'tank.png' %}',  // Use the appropriate tank icon
                 // You may customize other properties of the marker as needed
             });
@@ -448,6 +448,7 @@
             var tankMarker = new google.maps.Marker({
                 position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
                 map: map,
+                title:  "Number: " + tank.jw_no + "\n" + "Name: " + tank.jw_name + "\n" + "Position :" + tank.jw_position + "\n" + "Address: " + tank.jw_address,
                 icon: '{% static 'jw.png' %}',  // Use the appropriate tank icon
                 // You may customize other properties of the marker as needed
             });
@@ -494,6 +495,7 @@
             var tankMarker = new google.maps.Marker({
                 position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
                 map: map,
+                title:  "Number: " + tank.wtp_no + "\n" + "Name: " + tank.wtp_name + "\n" + "Position :" + tank.wtp_position + "\n" + "Address: " + tank.wtp_address,
                 icon: '{% static 'wtp.png' %}',  // Use the appropriate tank icon
                 // You may customize other properties of the marker as needed
             });
@@ -539,6 +541,7 @@
             var tankMarker = new google.maps.Marker({
                 position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
                 map: map,
+                title:  "Number: " + tank.booster_no + "\n" + "Name: " + tank.booster_name + "\n" + "Position :" + tank.booster_position + "\n" + "Address: " + tank.booster_address,
                 icon: '{% static 'booster.png' %}',  // Use the appropriate tank icon
                 // You may customize other properties of the marker as needed
             });
@@ -679,6 +682,8 @@
             valve_type.push(null);
             valve_diameter.push(null);
             valve_key_size.push(null);
+
+            displayResults();
             
         }
     
@@ -1191,7 +1196,7 @@
     }
 
     // Save additional information when "Save" button is clicked
-    document.getElementById('savePipeInfo').addEventListener('click', function() {
+    /*document.getElementById('savePipeInfo').addEventListener('click', function() {
         var pipeType = document.getElementById('pipeType').value;
         var pipeDiameter = document.getElementById('pipeDiameter').value;
 
@@ -1216,6 +1221,30 @@
         // Close modal popup
         var modal = document.getElementById('pipeModal');
         modal.style.display = 'none';
+    });*/
+
+    document.getElementById('savePipeInfo').addEventListener('click', function() {
+        var pipeType = document.getElementById('pipeType').value;
+        var pipeDiameter = document.getElementById('pipeDiameter').value;
+    
+        if (pipeType.trim() !== '' && pipeDiameter.trim() !== '') {
+            // If both fields are filled, proceed with saving
+            console.log(getpip_type(pipeType, pipeDiameter));
+    
+            valve_type.push(null);
+            valve_diameter.push(null);
+            valve_key_size.push(null);
+    
+            pipe_material.push(getpip_type(pipeType));
+            pipe_diameter.push(getpip_dim(pipeDiameter));
+    
+            // Close modal popup
+            var modal = document.getElementById('pipeModal');
+            modal.style.display = 'none';
+        } else {
+            // If any field is empty, show a warning message
+            alert('Please fill out all fields.');
+        }
     });
 
     // Function to save marker with additional information
@@ -1246,7 +1275,7 @@ function showvModalPopupv() {
 }
 
 // Save additional information when "Save" button is clicked
-document.getElementById('savevInfo').addEventListener('click', function() {
+/*document.getElementById('savevInfo').addEventListener('click', function() {
     var valve_type_input = document.getElementById('valve_type').value;
     var valve_diameter_input = document.getElementById('valve_diameter').value;
     var valve_key_size_input = document.getElementById('valve_key_size').value;
@@ -1267,6 +1296,30 @@ document.getElementById('savevInfo').addEventListener('click', function() {
     // Close modal popup
     var modal = document.getElementById('vModal');
     modal.style.display = 'none';
+});*/
+
+document.getElementById('savevInfo').addEventListener('click', function() {
+    var valve_type_input = document.getElementById('valve_type').value;
+    var valve_diameter_input = document.getElementById('valve_diameter').value;
+    var valve_key_size_input = document.getElementById('valve_key_size').value;
+
+    if (valve_type_input.trim() !== '' && valve_diameter_input.trim() !== '' && valve_key_size_input.trim() !== '') {
+        // If all fields are filled, proceed with saving
+        pipe_material.push(null);
+        pipe_diameter.push(null);
+
+        // Push values into respective arrays
+        valve_type.push(get_valve_type(valve_type_input));
+        valve_diameter.push(get_valve_diameter(valve_diameter_input));
+        valve_key_size.push(get_valve_key_size(valve_key_size_input));
+
+        // Close modal popup
+        var modal = document.getElementById('vModal');
+        modal.style.display = 'none';
+    } else {
+        // If any field is empty, show a warning message
+        alert('Please fill out all fields.');
+    }
 });
 
 // Function to save marker with additional information

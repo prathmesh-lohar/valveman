@@ -753,8 +753,11 @@ def get_markers(request):
         all_tanks.append({
             'latitude': marker.latitude,
             'longitude': marker.longitude,
+            'owt_tank_name':marker.owt_tank_name,
+            'owt_address':marker.owt_address,
+            'owt_position':marker.owt_position,
+            'tank_no':marker.tank_no,
             
-            # Add other fields if needed
            
         })
         
@@ -762,7 +765,11 @@ def get_markers(request):
         all_jw.append({
             'latitude': marker.latitude,
             'longitude': marker.longitude,
-            
+            'jw_no':marker.jw_no,
+            'jw_name':marker.jw_name,
+            'jw_position':marker.jw_position,
+            'jw_address':marker.jw_address
+           
             # Add other fields if needed
            
         })
@@ -771,6 +778,11 @@ def get_markers(request):
         all_wtp.append({
             'latitude': marker.latitude,
             'longitude': marker.longitude,
+            'wtp_no':marker.wtp_no,
+            'wtp_name':marker.wtp_name,
+            'wtp_position':marker.wtp_position,
+            'wtp_address':marker.wtp_address,
+            
             
             # Add other fields if needed
            
@@ -781,6 +793,10 @@ def get_markers(request):
         all_booster.append({
             'latitude': marker.latitude,
             'longitude': marker.longitude,
+            'booster_no':marker.booster_no, 
+            'booster_name':marker.booster_name,  
+            'booster_position':marker.booster_position,
+            'booster_address':marker.booster_address,
             
             # Add other fields if needed
            
