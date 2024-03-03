@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, HttpResponse
 from app1.models import tanks
 from django.http import JsonResponse
 from app1.models import marker
+from app1.models import jw
 
 import json
 from django.http import JsonResponse
@@ -93,8 +94,10 @@ def all_tanks(request):
 
 def draw_line(request):
     
+    from app1.models import jw,marker
     
     tank = tanks.objects.all()
+    jw = jw.objects.all()
     
     markers = marker.objects.all()
     
@@ -106,6 +109,7 @@ def draw_line(request):
     data = {
         'tank':tank,
         'marker':marker,
+        'jw':jw,
      
     }
     
@@ -194,7 +198,7 @@ def save_markers(request):
             
             # Set default marker type if not provided
             if marker_type is None:
-                marker_type = 'tank'
+                marker_type = 'start'
 
             # Check if a marker with the same path_id and point_id already exists
             existing_marker = marker.objects.filter(path_id=new_path_id, point_id=index).first()
@@ -721,9 +725,10 @@ def get_existing_marker(request):
     
 def get_markers(request):
     
-    from app1.models import  marker,tanks
+    from app1.models import  marker,tanks,jw,wtp,booster
     
     markers = marker.objects.all()
+    
     markers_by_path = get_markers_by_path_id()
 
     # Serialize marker data
@@ -733,9 +738,47 @@ def get_markers(request):
     tanks = tanks.objects.all()
     all_tanks = []
     
+    #jws
+    jw = jw.objects.all()
+    all_jw = []
+    #wtp
+    wtp=wtp.objects.all()
+    all_wtp=[];
+    #boster
+    booster = booster.objects.all()
+    all_booster=[];
+    
     
     for marker in tanks:
         all_tanks.append({
+            'latitude': marker.latitude,
+            'longitude': marker.longitude,
+            
+            # Add other fields if needed
+           
+        })
+        
+    for marker in jw:
+        all_jw.append({
+            'latitude': marker.latitude,
+            'longitude': marker.longitude,
+            
+            # Add other fields if needed
+           
+        })
+        
+    for marker in wtp:
+        all_wtp.append({
+            'latitude': marker.latitude,
+            'longitude': marker.longitude,
+            
+            # Add other fields if needed
+           
+        })
+        
+    
+    for marker in booster:
+        all_booster.append({
             'latitude': marker.latitude,
             'longitude': marker.longitude,
             
@@ -762,7 +805,7 @@ def get_markers(request):
     
 
     # Return serialized marker data as JSON response
-    return JsonResponse({'success': True, 'markers': serialized_markers, 'markers_by_path':markers_by_path, 'all_tanks':all_tanks})
+    return JsonResponse({'success': True, 'markers': serialized_markers, 'markers_by_path':markers_by_path, 'all_tanks':all_tanks,'all_jw':all_jw,'all_wtp':all_wtp,'all_booster':all_booster})
         
         
         

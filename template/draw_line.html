@@ -377,8 +377,13 @@
 
                     // Draw lines between markers
                     drawTanksOnMap(data.all_tanks);
+                    drawjwOnMap(data.all_jw);
+                    drawwtpOnMap(data.all_wtp);
+                    drawboosterOnMap(data.all_booster);
+                    
 
                     // Draw lines between markers
+
 
                 } else {
                     console.error('Error fetching stored markers:', data.error);
@@ -398,16 +403,18 @@
             var tankMarker = new google.maps.Marker({
                 position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
                 map: map,
+                title: 'Uluru (Ayers Rock)',
                 icon: '{% static 'tank.png' %}',  // Use the appropriate tank icon
                 // You may customize other properties of the marker as needed
             });
-    
+
+          
             // Add click event listener to the tank marker
             tankMarker.addListener('click', function() {
                 //alert("Tank selected: " );
                 if (confirm("Do You Want To Select This Tank ?")) {
                 // Clear previous lines if any
-                clearLines();
+                //clearLines();
     
                 // Add the tank marker as the first marker
                 selectedMarkers = [tankMarker];
@@ -432,7 +439,142 @@
             });
         });
     }
+
+
+//jw
+    function drawjwOnMap(tanks) {
+        tanks.forEach(tank => {
+            // Create a marker for each tank
+            var tankMarker = new google.maps.Marker({
+                position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
+                map: map,
+                icon: '{% static 'jw.png' %}',  // Use the appropriate tank icon
+                // You may customize other properties of the marker as needed
+            });
+
+          
+            // Add click event listener to the tank marker
+            tankMarker.addListener('click', function() {
+                //alert("Tank selected: " );
+                if (confirm("Do You Want To Select This jw ?")) {
+                // Clear previous lines if any
+                clearLines();
     
+                // Add the tank marker as the first marker
+                selectedMarkers = [tankMarker];
+                currentMarkerType = "jw";
+
+                pipe_material.push(null);
+                pipe_diameter.push(null);
+
+                valve_diameter.push(null);
+                valve_key_size.push(null);
+                valve_type.push(null);
+
+                // Start drawing a line from this tank
+                startLineFromTank(tankMarker.getPosition());
+                }
+                else{
+
+                }
+                
+                
+              
+            });
+        });
+    }
+//
+
+//wtp
+
+
+    function drawwtpOnMap(tanks) {
+        tanks.forEach(tank => {
+            // Create a marker for each tank
+            var tankMarker = new google.maps.Marker({
+                position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
+                map: map,
+                icon: '{% static 'wtp.png' %}',  // Use the appropriate tank icon
+                // You may customize other properties of the marker as needed
+            });
+
+        
+            // Add click event listener to the tank marker
+            tankMarker.addListener('click', function() {
+                //alert("Tank selected: " );
+                if (confirm("Do You Want To Select This WTP ?")) {
+                // Clear previous lines if any
+                //clearLines();
+
+                // Add the tank marker as the first marker
+                selectedMarkers = [tankMarker];
+                currentMarkerType = "wtp";
+
+                pipe_material.push(null);
+                pipe_diameter.push(null);
+
+                valve_diameter.push(null);
+                valve_key_size.push(null);
+                valve_type.push(null);
+
+                // Start drawing a line from this tank
+                startLineFromTank(tankMarker.getPosition());
+                }
+                else{
+
+                }
+                
+                
+            
+            });
+        });
+    }
+
+
+// booster
+
+    function drawboosterOnMap(tanks) {
+        tanks.forEach(tank => {
+            // Create a marker for each tank
+            var tankMarker = new google.maps.Marker({
+                position: { lat: parseFloat(tank.latitude), lng: parseFloat(tank.longitude) },
+                map: map,
+                icon: '{% static 'booster.png' %}',  // Use the appropriate tank icon
+                // You may customize other properties of the marker as needed
+            });
+
+        
+            // Add click event listener to the tank marker
+            tankMarker.addListener('click', function() {
+                //alert("Tank selected: " );
+                if (confirm("Do You Want To Select This Booster ?")) {
+                // Clear previous lines if any
+                //clearLines();
+
+                // Add the tank marker as the first marker
+                selectedMarkers = [tankMarker];
+                currentMarkerType = "booster";
+
+                pipe_material.push(null);
+                pipe_diameter.push(null);
+
+                valve_diameter.push(null);
+                valve_key_size.push(null);
+                valve_type.push(null);
+
+                // Start drawing a line from this tank
+                startLineFromTank(tankMarker.getPosition());
+                }
+                else{
+
+                }
+                
+                
+            
+            });
+        });
+    }
+
 
 
 
@@ -660,7 +802,11 @@
                 return '{% static 'pipe.png' %}'; // Pipe icon
 
             case 'tank':
-                return '{% static 'tank.png' %}'
+                return '{% static 'tank.png' %}';
+
+            case 'start':
+
+                return 'None';
 
             case 'None':
                 return  'None';
@@ -670,65 +816,7 @@
         }
     }
 
-    {% comment %} function displayResults() {
-        console.log("Selected Markers: ", selectedMarkers);
     
-
-
-        // Extract latitude, longitude, and type from selected markers
-        var selectedMarkersData = selectedMarkers.map(function (marker) {
-            
-                var data = {
-                    latitude: marker.getPosition().lat(),
-                    longitude: marker.getPosition().lng(),
-                    
-                };
-                
-              
-                data.type = marker.info ? marker.info.type : null;// Assuming type is stored in the marker's info property
-               
-
-                
-            
-                return data;
-                
-
-        });
-
-        // Save selected markers
-        fetch('/save_markers', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token if required
-            },
-            body: JSON.stringify({
-                markers: selectedMarkersData,
-                pipe_material : pipe_material,
-                pipe_diameter : pipe_diameter,
-
-                valve_type : valve_type,
-                valve_diameter : valve_diameter,
-                valve_key_size : valve_key_size,
-
-            }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Selected markers saved successfully!');
-                    alert('Saved Successfully');
-                    location.reload();
-                    console.log(selectedMarkersData);
-                } else {
-                    console.error('Error saving selected markers:', data.error);
-                    alert('Error saving selected markers:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error sending AJAX request:', error);
-            });
-    } {% endcomment %}
 
     function displayResults() {
         console.log("Selected Markers: ", selectedMarkers);
