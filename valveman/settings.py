@@ -75,29 +75,29 @@ WSGI_APPLICATION = 'valveman.wsgi.application'
 
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'data2',
-#         'USER': 'root',
-#         'PASSWORD': 'root',
-#         'HOST':'localhost',
-#         'PORT':'3306',
-#     }
-# }
-
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'waternetworkmapp$waternetwork',
-        'USER': 'waternetworkmapp',
-        'PASSWORD': '$$Corestance@$$',
-        'HOST':'waternetworkmapping.mysql.pythonanywhere-services.com',
+        'NAME': 'data2',
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST':'localhost',
         'PORT':'3306',
     }
 }
+
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'waternetworkmapp$waternetwork',
+#         'USER': 'waternetworkmapp',
+#         'PASSWORD': '$$Corestance@$$',
+#         'HOST':'waternetworkmapping.mysql.pythonanywhere-services.com',
+#         'PORT':'3306',
+#     }
+# }
 
 
 
