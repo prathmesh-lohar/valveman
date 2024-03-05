@@ -175,6 +175,8 @@
                 <option value="valve">Valve</option>
                 <option value="branch">Branch</option>
                 <option value="pipe">Pipe</option>
+                <option value="switch_valve">Switch Valve</option>
+
             </select>
         </div>
 
@@ -698,17 +700,12 @@
         if (type === 'valve') {
             info.name = "v1";
             
-
-
             showvModalPopupv();
             
         } else if (type === 'pipe') {
             info.pipeType = "p1";
 
-            
-        
             showModalPopup();
-
         }
         else if(type === 'branch')
         {
@@ -720,8 +717,12 @@
             valve_diameter.push(null);
             valve_key_size.push(null);
 
-            
-            
+        }
+        else if(type === 'valve_diameter')
+        {
+
+            type = 'valve_diameter';
+
         }
     
         // Set marker type to 'tank' if it is 'None'
@@ -836,6 +837,9 @@
 
     function getIconForType(type) {
         switch (type) {
+            case 'switch_valve':
+                return '{% static 'valve.png' %}';
+
             case 'valve':
                 return '{% static 'valve.png' %}'; // Valve icon
             case 'branch':
@@ -845,7 +849,7 @@
 
             case 'tank':
                 return '{% static 'tank.png' %}';
-
+        
             case 'start':
 
                 return 'None';
@@ -1239,32 +1243,7 @@
     }
 
     // Save additional information when "Save" button is clicked
-    /*document.getElementById('savePipeInfo').addEventListener('click', function() {
-        var pipeType = document.getElementById('pipeType').value;
-        var pipeDiameter = document.getElementById('pipeDiameter').value;
-
-        // Save pipe type and diameter along with marker data
-        //saveMarkerWithAdditionalInfo(pipeType, pipeDiameter);
-
-        console.log(getpip_type(pipeType, pipeDiameter));
-
-
-        valve_type.push(null);
-        valve_diameter.push(null);
-        valve_key_size.push(null);
-
-
-        pipe_material.push(getpip_type(pipeType));
-        pipe_diameter.push(getpip_dim(pipeDiameter));
-
-
-    
-
-
-        // Close modal popup
-        var modal = document.getElementById('pipeModal');
-        modal.style.display = 'none';
-    });*/
+  
 
     document.getElementById('savePipeInfo').addEventListener('click', function() {
         var pipeType = document.getElementById('pipeType').value;
