@@ -166,7 +166,7 @@
 
 
 
-    <div class="fixed-bottom mx-2 container-fluid m-0 p-0" style="background-color: #f0f8ff30;" >
+    <div class="fixed-bottom mx-2 container-fluid m-0 p-0" style="background-color: #f0f8ff30; padding:50px;" >
 
 
         <div id="controls">
@@ -229,7 +229,7 @@
                 <option value="MS" > MS</option>
                 <option value="HDP" > HDP</option>
                 <option value="DI" > DI</option>
-                <option value="DI" > RCP</option>
+                <option value="RCP" > RCP</option>
                 <option value="Other" > Other</option>
             </select>
 
@@ -241,8 +241,9 @@
             </div>
           </div>
 
+          
 
-          {% comment %} for valve {% endcomment %}
+
 
           <div id="vModal" class="modal">
             <div class="modal-content">
@@ -280,9 +281,45 @@
       
         
 
-    </div>
+        </div>
 
     
+<style>
+    .modal {
+        display: none; /* Hide the modal by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+      }
+      
+      .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto; 15% from the top and centered horizontally */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 50%; /* Set the width to 50% */
+      }
+      
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      
+</style>
 
 
 
@@ -683,7 +720,7 @@
             valve_diameter.push(null);
             valve_key_size.push(null);
 
-            displayResults();
+            
             
         }
     
@@ -895,21 +932,27 @@
        
        
         console.log('Marker clicked! Path ID:', up_path_id, 'Point ID:', up_index);
-        alert('Marker clicked!');
+        //alert('Marker clicked!');
+        if (confirm("Do You Want To Select This Marker ?")) {
+            selectedMarker = marker; 
+
+            google.maps.event.addListenerOnce(map, 'click', function (event) {
+                drawLineFromSelectedMarker(event.latLng);
+            });
+
+            // Increment pointId
+            var newPointId = pointId + 1; // Assuming pointId is a numeric value
+
+            // Call a function to extend the marker or line with the new pointId
+            extendMarkerOrLine(marker, newPointId);
+
+        }
+        else {
+
+        }
         
 
-        selectedMarker = marker; 
-
-        google.maps.event.addListenerOnce(map, 'click', function (event) {
-            drawLineFromSelectedMarker(event.latLng);
-        });
-
-        // Increment pointId
-        var newPointId = pointId + 1; // Assuming pointId is a numeric value
-
-        // Call a function to extend the marker or line with the new pointId
-        extendMarkerOrLine(marker, newPointId);
-
+        
         //for branch
 
         // Check if the clicked marker is of type "branch"
@@ -1349,7 +1392,33 @@ function get_valve_key_size(valve_key_size) {
 }
 
 
+// Get the close buttons and attach click event listeners to them
+var closeButtons = document.querySelectorAll('.close');
+closeButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+        var modal = button.closest('.modal'); // Find the parent modal element
+        modal.style.display = 'none'; // Hide the modal
+        
+        location.reload();
+    });
+});
+
+// Get the Done buttons and attach click event listeners to them
+document.getElementById('savePipeInfo').addEventListener('click', function() {
     
+    // Your logic for saving pipe information goes here
+    var pipeModal = document.getElementById('pipeModal');
+    pipeModal.style.display = 'none'; // Hide the modal
+
+});
+
+document.getElementById('savevInfo').addEventListener('click', function() {
+    redo();
+    // Your logic for saving valve information goes here
+    var vModal = document.getElementById('vModal');
+    vModal.style.display = 'none'; // Hide the modal
+});
+
 
 </script>
 

@@ -16,6 +16,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = ['https://waternetworkmapping.pythonanywhere.com/','http://*waternetworkmapping.pythonanywhere.com/', ' https://136f-2409-40c2-104d-6ca3-b09a-e9ca-d4d2-d2b8.ngrok-free.app',' https://*136f-2409-40c2-104d-6ca3-b09a-e9ca-d4d2-d2b8.ngrok-free.app']
 
 # Application definition
 
@@ -28,7 +29,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app1',
     'import_export',
-
 ]
 
 MIDDLEWARE = [
