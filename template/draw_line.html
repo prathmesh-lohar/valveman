@@ -174,7 +174,7 @@
             <select id="locationType" >
                 <option value="valve">Valve</option>
                 <option value="branch">Branch</option>
-                <option value="branc+valve">branc+valve</option>
+                
 
                 <option value="pipe">Pipe</option>
                 <option value="switch_valve">Switch Valve</option>
@@ -721,15 +721,7 @@
             valve_key_size.push(null);
 
         }
-        else if(type === 'branc+valve'){
-            type = 'branc+valve';
-            
-            pipe_material.push(null)
-            pipe_diameter.push(null)
-            valve_type.push(null);
-            valve_diameter.push(null);
-            valve_key_size.push(null);
-        }
+       
         
         else if(type === 'switch_valve')
         {
@@ -859,9 +851,7 @@
                 return '{% static 'valve.png' %}'; // Valve icon
             case 'branch':
                 return '{% static 'branch.png' %}'; // Branch icon
-            case 'branc+valve':
-                return '{% static 'branch.png' %}'; // Branch icon
-
+           
                 
             case 'pipe':
                 return '{% static 'pipe.png' %}'; // Pipe icon
